@@ -2,7 +2,7 @@
 
 A single-file HTML dashboard that visualizes your Claude Code usage by parsing the `~/.claude` folder logs.
 
-![Dashboard Preview](https://img.shields.io/badge/Claude_Code-Analytics-blue)
+![Dashboard Preview](screenshot.png)
 
 ## Features
 
@@ -79,6 +79,9 @@ claude-code-analytics-dashboard/
 ├── generate_dashboard.py  # Main script - run this
 ├── template.html          # Dashboard template
 ├── README.md
+├── CLAUDE.md              # Project context for Claude Code
+├── LICENSE                # MIT License
+├── screenshot.png         # Dashboard preview
 └── my-dashboard.html      # Generated output (gitignored)
 ```
 
