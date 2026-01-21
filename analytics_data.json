@@ -1,0 +1,1401 @@
+{
+  "generated_at": "2026-01-20T22:24:54.173787",
+  "summary": {
+    "total_sessions": 130,
+    "total_jsonl_files": 270,
+    "total_input_tokens": 2804486,
+    "total_output_tokens": 2687863,
+    "total_cache_read": 1548984164,
+    "total_cache_creation": 280649636,
+    "cache_hit_rate": 84.5,
+    "estimated_cost_sonnet": 1557.45,
+    "estimated_cost_opus": 7787.25,
+    "total_tool_calls": 9590,
+    "total_mcp_calls": 546,
+    "unique_tools": 47,
+    "unique_mcp_servers": 5,
+    "unique_subagents": 5,
+    "unique_projects": 7
+  },
+  "tools": [
+    {
+      "name": "Bash",
+      "count": 3192,
+      "errors": 0
+    },
+    {
+      "name": "Read",
+      "count": 1984,
+      "errors": 0
+    },
+    {
+      "name": "Edit",
+      "count": 1109,
+      "errors": 0
+    },
+    {
+      "name": "Write",
+      "count": 933,
+      "errors": 0
+    },
+    {
+      "name": "TodoWrite",
+      "count": 694,
+      "errors": 0
+    },
+    {
+      "name": "Glob",
+      "count": 354,
+      "errors": 0
+    },
+    {
+      "name": "AskUserQuestion",
+      "count": 262,
+      "errors": 0
+    },
+    {
+      "name": "Grep",
+      "count": 256,
+      "errors": 0
+    },
+    {
+      "name": "mcp__gmail__read_email",
+      "count": 185,
+      "errors": 0
+    },
+    {
+      "name": "mcp__airtable__list_records",
+      "count": 114,
+      "errors": 0
+    },
+    {
+      "name": "Task",
+      "count": 79,
+      "errors": 0
+    },
+    {
+      "name": "WebFetch",
+      "count": 60,
+      "errors": 0
+    },
+    {
+      "name": "WebSearch",
+      "count": 50,
+      "errors": 0
+    },
+    {
+      "name": "mcp__airtable__search_records",
+      "count": 42,
+      "errors": 0
+    },
+    {
+      "name": "mcp__gmail__search_emails",
+      "count": 26,
+      "errors": 0
+    },
+    {
+      "name": "mcp__gmail__modify_email",
+      "count": 25,
+      "errors": 0
+    },
+    {
+      "name": "mcp__airtable__update_records",
+      "count": 24,
+      "errors": 0
+    },
+    {
+      "name": "mcp__gmail__mark_as_read",
+      "count": 21,
+      "errors": 0
+    },
+    {
+      "name": "TaskOutput",
+      "count": 20,
+      "errors": 0
+    },
+    {
+      "name": "KillShell",
+      "count": 15,
+      "errors": 0
+    },
+    {
+      "name": "ExitPlanMode",
+      "count": 15,
+      "errors": 0
+    },
+    {
+      "name": "mcp__airtable__get_record",
+      "count": 14,
+      "errors": 0
+    },
+    {
+      "name": "EnterPlanMode",
+      "count": 11,
+      "errors": 0
+    },
+    {
+      "name": "mcp__outlook-assistant__check-auth-status",
+      "count": 11,
+      "errors": 0
+    },
+    {
+      "name": "mcp__outlook-assistant__authenticate",
+      "count": 10,
+      "errors": 0
+    },
+    {
+      "name": "Skill",
+      "count": 10,
+      "errors": 0
+    },
+    {
+      "name": "mcp__slack__slack_post_message",
+      "count": 10,
+      "errors": 0
+    },
+    {
+      "name": "mcp__spawner__spawner_skill_score",
+      "count": 10,
+      "errors": 0
+    },
+    {
+      "name": "mcp__gmail__batch_modify_emails",
+      "count": 8,
+      "errors": 0
+    },
+    {
+      "name": "mcp__airtable__list_tables",
+      "count": 7,
+      "errors": 0
+    },
+    {
+      "name": "mcp__spawner__spawner_skills",
+      "count": 6,
+      "errors": 0
+    },
+    {
+      "name": "mcp__airtable__list_bases",
+      "count": 6,
+      "errors": 0
+    },
+    {
+      "name": "mcp__slack__slack_list_channels",
+      "count": 5,
+      "errors": 0
+    },
+    {
+      "name": "mcp__outlook-assistant__list-events",
+      "count": 3,
+      "errors": 0
+    },
+    {
+      "name": "mcp__outlook-assistant__search-emails",
+      "count": 3,
+      "errors": 0
+    },
+    {
+      "name": "mcp__spawner__spawner_skill_new",
+      "count": 2,
+      "errors": 0
+    },
+    {
+      "name": "mcp__outlook-assistant__about",
+      "count": 2,
+      "errors": 0
+    },
+    {
+      "name": "mcp__airtable__create_record",
+      "count": 2,
+      "errors": 0
+    },
+    {
+      "name": "mcp__airtable__describe_table",
+      "count": 2,
+      "errors": 0
+    },
+    {
+      "name": "mcp__outlook-assistant__list-emails",
+      "count": 1,
+      "errors": 0
+    },
+    {
+      "name": "mcp__outlook-assistant__onedrive-search",
+      "count": 1,
+      "errors": 0
+    },
+    {
+      "name": "mcp__gmail__draft_email",
+      "count": 1,
+      "errors": 0
+    },
+    {
+      "name": "mcp__spawner__spawner_skill_upgrade",
+      "count": 1,
+      "errors": 0
+    },
+    {
+      "name": "mcp__gmail__mark-as-read",
+      "count": 1,
+      "errors": 0
+    },
+    {
+      "name": "mcp__outlook-assistant__list-folders",
+      "count": 1,
+      "errors": 0
+    },
+    {
+      "name": "mcp__outlook-assistant__flow-list-environments",
+      "count": 1,
+      "errors": 0
+    },
+    {
+      "name": "mcp__gmail__get_or_create_label",
+      "count": 1,
+      "errors": 0
+    }
+  ],
+  "mcp_servers": [
+    {
+      "server": "gmail",
+      "count": 268,
+      "tools": {
+        "mcp__gmail__search_emails": 26,
+        "mcp__gmail__read_email": 185,
+        "mcp__gmail__mark_as_read": 21,
+        "mcp__gmail__modify_email": 25,
+        "mcp__gmail__draft_email": 1,
+        "mcp__gmail__batch_modify_emails": 8,
+        "mcp__gmail__mark-as-read": 1,
+        "mcp__gmail__get_or_create_label": 1
+      }
+    },
+    {
+      "server": "airtable",
+      "count": 211,
+      "tools": {
+        "mcp__airtable__list_bases": 6,
+        "mcp__airtable__list_tables": 7,
+        "mcp__airtable__list_records": 114,
+        "mcp__airtable__search_records": 42,
+        "mcp__airtable__get_record": 14,
+        "mcp__airtable__create_record": 2,
+        "mcp__airtable__update_records": 24,
+        "mcp__airtable__describe_table": 2
+      }
+    },
+    {
+      "server": "outlook-assistant",
+      "count": 33,
+      "tools": {
+        "mcp__outlook-assistant__check-auth-status": 11,
+        "mcp__outlook-assistant__authenticate": 10,
+        "mcp__outlook-assistant__list-events": 3,
+        "mcp__outlook-assistant__list-emails": 1,
+        "mcp__outlook-assistant__onedrive-search": 1,
+        "mcp__outlook-assistant__search-emails": 3,
+        "mcp__outlook-assistant__about": 2,
+        "mcp__outlook-assistant__list-folders": 1,
+        "mcp__outlook-assistant__flow-list-environments": 1
+      }
+    },
+    {
+      "server": "spawner",
+      "count": 19,
+      "tools": {
+        "mcp__spawner__spawner_skills": 6,
+        "mcp__spawner__spawner_skill_new": 2,
+        "mcp__spawner__spawner_skill_score": 10,
+        "mcp__spawner__spawner_skill_upgrade": 1
+      }
+    },
+    {
+      "server": "slack",
+      "count": 15,
+      "tools": {
+        "mcp__slack__slack_list_channels": 5,
+        "mcp__slack__slack_post_message": 10
+      }
+    }
+  ],
+  "subagents": [
+    {
+      "type": "Explore",
+      "count": 67
+    },
+    {
+      "type": "Bash",
+      "count": 6
+    },
+    {
+      "type": "Plan",
+      "count": 4
+    },
+    {
+      "type": "Research Analyst Agent",
+      "count": 1
+    },
+    {
+      "type": "clea",
+      "count": 1
+    }
+  ],
+  "daily_usage": [
+    {
+      "date": "2026-01-08",
+      "input": 8196,
+      "output": 155591,
+      "cache_read": 37924487,
+      "cache_creation": 5461274
+    },
+    {
+      "date": "2026-01-09",
+      "input": 9275,
+      "output": 52185,
+      "cache_read": 23593541,
+      "cache_creation": 8982258
+    },
+    {
+      "date": "2026-01-10",
+      "input": 40408,
+      "output": 177010,
+      "cache_read": 59483758,
+      "cache_creation": 7182738
+    },
+    {
+      "date": "2026-01-11",
+      "input": 113785,
+      "output": 527283,
+      "cache_read": 173822995,
+      "cache_creation": 27747028
+    },
+    {
+      "date": "2026-01-12",
+      "input": 452516,
+      "output": 446949,
+      "cache_read": 167213389,
+      "cache_creation": 34372810
+    },
+    {
+      "date": "2026-01-13",
+      "input": 951306,
+      "output": 827272,
+      "cache_read": 339106622,
+      "cache_creation": 63367646
+    },
+    {
+      "date": "2026-01-14",
+      "input": 91312,
+      "output": 354503,
+      "cache_read": 230544966,
+      "cache_creation": 24928352
+    },
+    {
+      "date": "2026-01-15",
+      "input": 85306,
+      "output": 59007,
+      "cache_read": 30411655,
+      "cache_creation": 6345158
+    },
+    {
+      "date": "2026-01-16",
+      "input": 42310,
+      "output": 75735,
+      "cache_read": 82903727,
+      "cache_creation": 13298386
+    },
+    {
+      "date": "2026-01-17",
+      "input": 221087,
+      "output": 4033,
+      "cache_read": 145519469,
+      "cache_creation": 31132814
+    },
+    {
+      "date": "2026-01-18",
+      "input": 180668,
+      "output": 1286,
+      "cache_read": 34615138,
+      "cache_creation": 7896536
+    },
+    {
+      "date": "2026-01-19",
+      "input": 99991,
+      "output": 2629,
+      "cache_read": 103814354,
+      "cache_creation": 21762130
+    },
+    {
+      "date": "2026-01-20",
+      "input": 424263,
+      "output": 2174,
+      "cache_read": 71169829,
+      "cache_creation": 19201300
+    },
+    {
+      "date": "2026-01-21",
+      "input": 84063,
+      "output": 2206,
+      "cache_read": 48860234,
+      "cache_creation": 8971206
+    }
+  ],
+  "hourly_distribution": [
+    {
+      "hour": 0,
+      "count": 473
+    },
+    {
+      "hour": 1,
+      "count": 4
+    },
+    {
+      "hour": 2,
+      "count": 215
+    },
+    {
+      "hour": 3,
+      "count": 1333
+    },
+    {
+      "hour": 4,
+      "count": 2211
+    },
+    {
+      "hour": 5,
+      "count": 4908
+    },
+    {
+      "hour": 6,
+      "count": 4333
+    },
+    {
+      "hour": 7,
+      "count": 3891
+    },
+    {
+      "hour": 8,
+      "count": 3742
+    },
+    {
+      "hour": 9,
+      "count": 1492
+    },
+    {
+      "hour": 10,
+      "count": 0
+    },
+    {
+      "hour": 11,
+      "count": 0
+    },
+    {
+      "hour": 12,
+      "count": 0
+    },
+    {
+      "hour": 13,
+      "count": 0
+    },
+    {
+      "hour": 14,
+      "count": 67
+    },
+    {
+      "hour": 15,
+      "count": 566
+    },
+    {
+      "hour": 16,
+      "count": 816
+    },
+    {
+      "hour": 17,
+      "count": 740
+    },
+    {
+      "hour": 18,
+      "count": 530
+    },
+    {
+      "hour": 19,
+      "count": 1403
+    },
+    {
+      "hour": 20,
+      "count": 1046
+    },
+    {
+      "hour": 21,
+      "count": 1360
+    },
+    {
+      "hour": 22,
+      "count": 1864
+    },
+    {
+      "hour": 23,
+      "count": 1149
+    }
+  ],
+  "projects": [
+    {
+      "name": "-Users-wallyhansen",
+      "sessions": 103,
+      "tokens": 2683099
+    },
+    {
+      "name": "-",
+      "sessions": 21,
+      "tokens": 2206746
+    },
+    {
+      "name": "-Users-wallyhansen-Desktop-crosslayer-projects-crosslayer-os",
+      "sessions": 2,
+      "tokens": 480128
+    },
+    {
+      "name": "-Users-wallyhansen-Desktop-sandbox",
+      "sessions": 1,
+      "tokens": 111823
+    },
+    {
+      "name": "-Users-wallyhansen-Desktop-projects-riversideco-homebase-vectors",
+      "sessions": 1,
+      "tokens": 10090
+    },
+    {
+      "name": "-Users-wallyhansen-Desktop-projects-riverside-co-homebase-vectors",
+      "sessions": 1,
+      "tokens": 459
+    },
+    {
+      "name": "-Users-wallyhansen-outlook-mcp",
+      "sessions": 1,
+      "tokens": 4
+    }
+  ],
+  "top_sessions": [
+    {
+      "id": "5727d848-70ed-49b1-a772-e472a2c9284e",
+      "project": "-",
+      "cwd": "/",
+      "git_branch": "",
+      "first_timestamp": "2026-01-13T08:43:10.353Z",
+      "last_timestamp": "2026-01-13T08:54:52.106Z",
+      "message_count": 250,
+      "input_tokens": 532639,
+      "output_tokens": 26417,
+      "cache_read": 4333954,
+      "cache_creation": 3068818,
+      "tool_calls": 92
+    },
+    {
+      "id": "50b3671b-9dcb-4948-a012-2fa2aea14ee5",
+      "project": "-Users-wallyhansen-Desktop-crosslayer-projects-crosslayer-os",
+      "cwd": "/Users/wallyhansen/Desktop/crosslayer/projects/crosslayer-os",
+      "git_branch": "main",
+      "first_timestamp": "2026-01-11T08:03:54.634Z",
+      "last_timestamp": "2026-01-12T07:55:00.172Z",
+      "message_count": 2437,
+      "input_tokens": 85568,
+      "output_tokens": 390355,
+      "cache_read": 115222897,
+      "cache_creation": 19679064,
+      "tool_calls": 801
+    },
+    {
+      "id": "0ddb3a14-d203-4623-9617-750afa6eb29d",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-10T03:42:26.054Z",
+      "last_timestamp": "2026-01-10T03:42:27.440Z",
+      "message_count": 1475,
+      "input_tokens": 93368,
+      "output_tokens": 218429,
+      "cache_read": 66108869,
+      "cache_creation": 13736012,
+      "tool_calls": 456
+    },
+    {
+      "id": "a90200f6-636a-4f02-8147-6ba5f2660eb9",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-13T19:19:58.899Z",
+      "last_timestamp": "2026-01-13T19:32:50.448Z",
+      "message_count": 2048,
+      "input_tokens": 125655,
+      "output_tokens": 170109,
+      "cache_read": 116199101,
+      "cache_creation": 20008712,
+      "tool_calls": 619
+    },
+    {
+      "id": "858e20a1-4ed9-4440-bf4d-f299555b27a8",
+      "project": "-",
+      "cwd": "/",
+      "git_branch": "",
+      "first_timestamp": "2026-01-12T16:30:28.120Z",
+      "last_timestamp": "2026-01-12T16:28:13.776Z",
+      "message_count": 1587,
+      "input_tokens": 39608,
+      "output_tokens": 200221,
+      "cache_read": 85228681,
+      "cache_creation": 13333660,
+      "tool_calls": 476
+    },
+    {
+      "id": "d0ef59e8-c2ae-4e66-88f4-7409fe223b1a",
+      "project": "-",
+      "cwd": "/",
+      "git_branch": "",
+      "first_timestamp": "2026-01-11T08:08:59.302Z",
+      "last_timestamp": "2026-01-11T08:09:00.981Z",
+      "message_count": 1356,
+      "input_tokens": 11102,
+      "output_tokens": 211784,
+      "cache_read": 73195489,
+      "cache_creation": 9399400,
+      "tool_calls": 400
+    },
+    {
+      "id": "6becf167-0322-4ad2-95fc-477ed1c2839a",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-08T07:40:50.968Z",
+      "last_timestamp": "2026-01-10T03:35:33.475Z",
+      "message_count": 1058,
+      "input_tokens": 9955,
+      "output_tokens": 207456,
+      "cache_read": 61497427,
+      "cache_creation": 14402330,
+      "tool_calls": 312
+    },
+    {
+      "id": "4aaccfae-53c3-47a0-9708-55c931926385",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-13T20:35:07.438Z",
+      "last_timestamp": "2026-01-14T07:20:18.400Z",
+      "message_count": 1395,
+      "input_tokens": 18777,
+      "output_tokens": 180074,
+      "cache_read": 85787722,
+      "cache_creation": 7114022,
+      "tool_calls": 359
+    },
+    {
+      "id": "cd869a57-ec98-41e6-a89d-8a0aedf8a271",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-20T21:35:56.896Z",
+      "last_timestamp": "2026-01-20T22:14:55.527Z",
+      "message_count": 74,
+      "input_tokens": 196962,
+      "output_tokens": 86,
+      "cache_read": 3138223,
+      "cache_creation": 1173176,
+      "tool_calls": 27
+    },
+    {
+      "id": "49cc439d-0ad9-4422-8bd0-ff0a24c1c60c",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-20T22:19:42.774Z",
+      "last_timestamp": "2026-01-21T03:19:14.276Z",
+      "message_count": 533,
+      "input_tokens": 185077,
+      "output_tokens": 874,
+      "cache_read": 34364819,
+      "cache_creation": 5903514,
+      "tool_calls": 190
+    },
+    {
+      "id": "2e297d0d-66c8-4cde-a692-05f0809960d3",
+      "project": "-",
+      "cwd": "/",
+      "git_branch": "",
+      "first_timestamp": "2026-01-13T07:39:22.133Z",
+      "last_timestamp": "2026-01-13T07:58:45.420Z",
+      "message_count": 1197,
+      "input_tokens": 115342,
+      "output_tokens": 59000,
+      "cache_read": 17365533,
+      "cache_creation": 7311258,
+      "tool_calls": 436
+    },
+    {
+      "id": "fc0fe977-d5a0-4da7-baeb-d90031ecc073",
+      "project": "-",
+      "cwd": "/",
+      "git_branch": "",
+      "first_timestamp": "2026-01-12T07:34:42.516Z",
+      "last_timestamp": "2026-01-13T08:43:08.715Z",
+      "message_count": 1012,
+      "input_tokens": 29017,
+      "output_tokens": 140513,
+      "cache_read": 38881474,
+      "cache_creation": 14070200,
+      "tool_calls": 280
+    },
+    {
+      "id": "434a0653-96fc-4f3b-81cf-be3a2f25989a",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-15T09:05:49.289Z",
+      "last_timestamp": "2026-01-16T06:50:33.856Z",
+      "message_count": 1261,
+      "input_tokens": 52063,
+      "output_tokens": 114486,
+      "cache_read": 73205861,
+      "cache_creation": 11611708,
+      "tool_calls": 372
+    },
+    {
+      "id": "c60feb3f-a820-430f-8512-9d82552c247c",
+      "project": "-",
+      "cwd": "/",
+      "git_branch": "",
+      "first_timestamp": "2026-01-12T07:48:26.558Z",
+      "last_timestamp": "2026-01-12T07:48:17.222Z",
+      "message_count": 536,
+      "input_tokens": 135831,
+      "output_tokens": 28880,
+      "cache_read": 18089380,
+      "cache_creation": 2934334,
+      "tool_calls": 160
+    },
+    {
+      "id": "ac7f243e-1fae-4dce-b67a-463f3843ea53",
+      "project": "-",
+      "cwd": "/",
+      "git_branch": "",
+      "first_timestamp": "2026-01-12T16:23:58.799Z",
+      "last_timestamp": "2026-01-12T16:18:37.803Z",
+      "message_count": 396,
+      "input_tokens": 125732,
+      "output_tokens": 26606,
+      "cache_read": 6529504,
+      "cache_creation": 1681324,
+      "tool_calls": 142
+    },
+    {
+      "id": "ea11ec3a-5a5c-4feb-b227-75206b2e932e",
+      "project": "-",
+      "cwd": "/",
+      "git_branch": "",
+      "first_timestamp": "2026-01-11T08:15:42.704Z",
+      "last_timestamp": "2026-01-11T08:15:35.463Z",
+      "message_count": 1023,
+      "input_tokens": 10057,
+      "output_tokens": 121019,
+      "cache_read": 53000725,
+      "cache_creation": 9370754,
+      "tool_calls": 293
+    },
+    {
+      "id": "56460fd2-11cf-499e-9dd6-50c6f109c66d",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-13T20:12:19.527Z",
+      "last_timestamp": "2026-01-14T07:10:46.011Z",
+      "message_count": 1674,
+      "input_tokens": 12112,
+      "output_tokens": 109853,
+      "cache_read": 91308446,
+      "cache_creation": 7068050,
+      "tool_calls": 435
+    },
+    {
+      "id": "570bd958-fe5d-49a5-ac22-04c67f491b32",
+      "project": "-Users-wallyhansen-Desktop-sandbox",
+      "cwd": "/Users/wallyhansen/Desktop/sandbox",
+      "git_branch": "",
+      "first_timestamp": "2026-01-13T23:13:12.109Z",
+      "last_timestamp": "2026-01-14T05:22:31.208Z",
+      "message_count": 749,
+      "input_tokens": 16887,
+      "output_tokens": 94936,
+      "cache_read": 42494749,
+      "cache_creation": 4797016,
+      "tool_calls": 212
+    },
+    {
+      "id": "e4568ad0-12bf-4456-a3c1-239d36d6e3f7",
+      "project": "-",
+      "cwd": "/",
+      "git_branch": "",
+      "first_timestamp": "2026-01-12T16:26:44.062Z",
+      "last_timestamp": "2026-01-12T16:24:19.244Z",
+      "message_count": 270,
+      "input_tokens": 69552,
+      "output_tokens": 24905,
+      "cache_read": 7347489,
+      "cache_creation": 1731402,
+      "tool_calls": 73
+    },
+    {
+      "id": "47a45b9d-1eb4-4937-8cf3-05cfbfeb5a36",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-18T07:39:38.690Z",
+      "last_timestamp": "2026-01-18T07:50:25.060Z",
+      "message_count": 64,
+      "input_tokens": 92728,
+      "output_tokens": 51,
+      "cache_read": 1975240,
+      "cache_creation": 369902,
+      "tool_calls": 25
+    },
+    {
+      "id": "3759e266-db15-4360-a729-9c6401ac9279",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-10T04:22:17.182Z",
+      "last_timestamp": "2026-01-09T21:41:54.373Z",
+      "message_count": 484,
+      "input_tokens": 11503,
+      "output_tokens": 73631,
+      "cache_read": 28221399,
+      "cache_creation": 2657232,
+      "tool_calls": 128
+    },
+    {
+      "id": "bc70e8e2-dcbd-4b3a-b1ab-45f1aa5fff1e",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-18T06:29:36.469Z",
+      "last_timestamp": "2026-01-18T07:07:15.727Z",
+      "message_count": 145,
+      "input_tokens": 79956,
+      "output_tokens": 144,
+      "cache_read": 7601189,
+      "cache_creation": 1555420,
+      "tool_calls": 46
+    },
+    {
+      "id": "b067da95-1b0c-48a3-bccf-6d1573da5439",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-15T08:38:09.682Z",
+      "last_timestamp": "2026-01-15T09:09:17.485Z",
+      "message_count": 144,
+      "input_tokens": 57671,
+      "output_tokens": 18773,
+      "cache_read": 8632869,
+      "cache_creation": 1669190,
+      "tool_calls": 45
+    },
+    {
+      "id": "a9762eb8-71dd-4a24-a1e5-159634c01c59",
+      "project": "-",
+      "cwd": "/",
+      "git_branch": "",
+      "first_timestamp": "2026-01-13T05:14:06.586Z",
+      "last_timestamp": "2026-01-13T05:14:07.736Z",
+      "message_count": 589,
+      "input_tokens": 20776,
+      "output_tokens": 54989,
+      "cache_read": 32320264,
+      "cache_creation": 6624868,
+      "tool_calls": 162
+    },
+    {
+      "id": "6d9264f3-490b-42f2-98f1-6ea4139ff8f3",
+      "project": "-",
+      "cwd": "/",
+      "git_branch": "",
+      "first_timestamp": "2026-01-13T07:57:00.986Z",
+      "last_timestamp": "2026-01-13T08:53:22.630Z",
+      "message_count": 173,
+      "input_tokens": 63989,
+      "output_tokens": 9600,
+      "cache_read": 5931849,
+      "cache_creation": 1849948,
+      "tool_calls": 52
+    },
+    {
+      "id": "f1d02a4f-2a7a-42a0-bb80-a08128544837",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-17T06:27:14.688Z",
+      "last_timestamp": "2026-01-17T06:38:24.624Z",
+      "message_count": 116,
+      "input_tokens": 63700,
+      "output_tokens": 159,
+      "cache_read": 5681999,
+      "cache_creation": 760210,
+      "tool_calls": 36
+    },
+    {
+      "id": "e1b04ed1-6fc2-4181-989c-b4117a6ca489",
+      "project": "-",
+      "cwd": "/",
+      "git_branch": "",
+      "first_timestamp": "2026-01-13T09:01:17.430Z",
+      "last_timestamp": "2026-01-13T09:23:39.097Z",
+      "message_count": 597,
+      "input_tokens": 2766,
+      "output_tokens": 60641,
+      "cache_read": 28704897,
+      "cache_creation": 4130662,
+      "tool_calls": 175
+    },
+    {
+      "id": "a230ad38-e1eb-4f82-a1ea-68226ec65d57",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-13T20:17:26.661Z",
+      "last_timestamp": "2026-01-13T20:33:24.196Z",
+      "message_count": 151,
+      "input_tokens": 41086,
+      "output_tokens": 17439,
+      "cache_read": 4625322,
+      "cache_creation": 420290,
+      "tool_calls": 51
+    },
+    {
+      "id": "8d5103e7-3050-4b19-a5e4-a92b347dd972",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-17T05:19:10.149Z",
+      "last_timestamp": "2026-01-17T06:21:46.186Z",
+      "message_count": 92,
+      "input_tokens": 52937,
+      "output_tokens": 125,
+      "cache_read": 3545994,
+      "cache_creation": 2011082,
+      "tool_calls": 30
+    },
+    {
+      "id": "7de5d86f-fb3e-4764-9751-ba17e873796d",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-19T05:46:09.562Z",
+      "last_timestamp": "2026-01-20T22:14:25.241Z",
+      "message_count": 300,
+      "input_tokens": 49555,
+      "output_tokens": 517,
+      "cache_read": 18230558,
+      "cache_creation": 9166562,
+      "tool_calls": 85
+    },
+    {
+      "id": "2453d330-d8ef-4664-9f82-ca23a439d604",
+      "project": "-",
+      "cwd": "/",
+      "git_branch": "",
+      "first_timestamp": "2026-01-13T06:28:26.649Z",
+      "last_timestamp": "2026-01-13T06:36:20.194Z",
+      "message_count": 379,
+      "input_tokens": 11037,
+      "output_tokens": 28264,
+      "cache_read": 11669736,
+      "cache_creation": 2250374,
+      "tool_calls": 119
+    },
+    {
+      "id": "d5c7f5ab-7540-4efb-80d1-798141ef60b0",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-17T04:56:39.463Z",
+      "last_timestamp": "2026-01-17T07:05:28.366Z",
+      "message_count": 624,
+      "input_tokens": 35608,
+      "output_tokens": 730,
+      "cache_read": 37729593,
+      "cache_creation": 6631778,
+      "tool_calls": 221
+    },
+    {
+      "id": "4716c257-fc5e-42c9-8fec-2d494a077bbc",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-17T05:41:18.471Z",
+      "last_timestamp": "2026-01-17T05:52:25.698Z",
+      "message_count": 218,
+      "input_tokens": 35556,
+      "output_tokens": 359,
+      "cache_read": 3970175,
+      "cache_creation": 1056718,
+      "tool_calls": 86
+    },
+    {
+      "id": "8331c8c6-4b87-433d-b8f4-eeb9a0693b7a",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-21T06:19:25.563Z",
+      "last_timestamp": "2026-01-21T06:24:49.940Z",
+      "message_count": 44,
+      "input_tokens": 33956,
+      "output_tokens": 56,
+      "cache_read": 1868899,
+      "cache_creation": 124614,
+      "tool_calls": 16
+    },
+    {
+      "id": "f3573cb2-215c-4e4c-a90b-9fd701d6b2e6",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-13T19:21:31.203Z",
+      "last_timestamp": "2026-01-13T20:31:55.147Z",
+      "message_count": 468,
+      "input_tokens": 2306,
+      "output_tokens": 30589,
+      "cache_read": 19456670,
+      "cache_creation": 1763696,
+      "tool_calls": 134
+    },
+    {
+      "id": "1cef1f44-bd63-45b3-aad8-cd525d2857ba",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-20T21:36:18.149Z",
+      "last_timestamp": "2026-01-21T03:22:15.394Z",
+      "message_count": 350,
+      "input_tokens": 31746,
+      "output_tokens": 893,
+      "cache_read": 24520638,
+      "cache_creation": 4024850,
+      "tool_calls": 105
+    },
+    {
+      "id": "ea52b87e-ae64-4295-8421-ca4c3afca1e8",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-21T05:48:44.916Z",
+      "last_timestamp": "2026-01-21T06:20:14.240Z",
+      "message_count": 106,
+      "input_tokens": 31772,
+      "output_tokens": 589,
+      "cache_read": 2608397,
+      "cache_creation": 770036,
+      "tool_calls": 40
+    },
+    {
+      "id": "2990354d-57a0-4272-a011-e65c274a62b3",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-19T05:02:38.493Z",
+      "last_timestamp": "2026-01-19T05:58:49.667Z",
+      "message_count": 388,
+      "input_tokens": 27064,
+      "output_tokens": 443,
+      "cache_read": 20658312,
+      "cache_creation": 3078968,
+      "tool_calls": 136
+    },
+    {
+      "id": "ca502064-e825-478c-971c-ea15cd2fc2f9",
+      "project": "-",
+      "cwd": "/",
+      "git_branch": "",
+      "first_timestamp": "2026-01-11T08:02:43.606Z",
+      "last_timestamp": "2026-01-11T08:02:43.132Z",
+      "message_count": 57,
+      "input_tokens": 23922,
+      "output_tokens": 2314,
+      "cache_read": 689179,
+      "cache_creation": 153100,
+      "tool_calls": 16
+    },
+    {
+      "id": "985f985c-cfac-4a26-a9c6-f3bda33063d0",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-14T04:39:09.720Z",
+      "last_timestamp": "2026-01-14T05:16:24.559Z",
+      "message_count": 49,
+      "input_tokens": 17343,
+      "output_tokens": 6476,
+      "cache_read": 890645,
+      "cache_creation": 303602,
+      "tool_calls": 13
+    },
+    {
+      "id": "f6070daa-9f50-423a-8620-491c0bccbae7",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-13T20:10:23.221Z",
+      "last_timestamp": "2026-01-13T20:36:01.702Z",
+      "message_count": 101,
+      "input_tokens": 16840,
+      "output_tokens": 6432,
+      "cache_read": 1982759,
+      "cache_creation": 298502,
+      "tool_calls": 36
+    },
+    {
+      "id": "4cdfbd0a-dc90-402c-af1c-3fbf45619ffd",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-10T05:20:38.597Z",
+      "last_timestamp": "2026-01-09T21:42:03.686Z",
+      "message_count": 178,
+      "input_tokens": 4604,
+      "output_tokens": 15850,
+      "cache_read": 5544085,
+      "cache_creation": 758974,
+      "tool_calls": 40
+    },
+    {
+      "id": "9b31f082-3c5c-4421-87e3-a3088d45a123",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-19T05:12:49.389Z",
+      "last_timestamp": "2026-01-19T05:43:36.358Z",
+      "message_count": 319,
+      "input_tokens": 17879,
+      "output_tokens": 297,
+      "cache_read": 18971941,
+      "cache_creation": 1448674,
+      "tool_calls": 121
+    },
+    {
+      "id": "6cd2ea65-3cb8-48bb-a62f-94715f15bc9d",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-16T19:22:55.872Z",
+      "last_timestamp": "2026-01-17T03:51:23.540Z",
+      "message_count": 345,
+      "input_tokens": 16848,
+      "output_tokens": 512,
+      "cache_read": 18808009,
+      "cache_creation": 4484204,
+      "tool_calls": 109
+    },
+    {
+      "id": "1151badb-b21a-43c3-a3c7-93313839b08f",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-17T06:38:45.053Z",
+      "last_timestamp": "2026-01-17T06:56:18.902Z",
+      "message_count": 134,
+      "input_tokens": 16442,
+      "output_tokens": 160,
+      "cache_read": 5728700,
+      "cache_creation": 279192,
+      "tool_calls": 37
+    },
+    {
+      "id": "e4150320-8ea3-4df2-8f5b-42cd8afe6f7f",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-21T03:23:01.292Z",
+      "last_timestamp": "2026-01-21T03:37:20.826Z",
+      "message_count": 148,
+      "input_tokens": 12957,
+      "output_tokens": 257,
+      "cache_read": 7013888,
+      "cache_creation": 459824,
+      "tool_calls": 42
+    },
+    {
+      "id": "94665bde-84a2-488a-b592-af9f3203027b",
+      "project": "-Users-wallyhansen",
+      "cwd": "/Users/wallyhansen",
+      "git_branch": "",
+      "first_timestamp": "2026-01-20T18:45:02.097Z",
+      "last_timestamp": "2026-01-21T03:13:59.159Z",
+      "message_count": 304,
+      "input_tokens": 9690,
+      "output_tokens": 421,
+      "cache_read": 17932399,
+      "cache_creation": 4605968,
+      "tool_calls": 76
+    },
+    {
+      "id": "7e8ebaa5-ef0f-4460-87d9-9799c9dd34c7",
+      "project": "-Users-wallyhansen-Desktop-projects-riversideco-homebase-vectors",
+      "cwd": "/Users/wallyhansen/Desktop/projects/riversideco/homebase/vectors",
+      "git_branch": "main",
+      "first_timestamp": "2026-01-16T18:38:07.678Z",
+      "last_timestamp": "2026-01-17T04:45:06.051Z",
+      "message_count": 364,
+      "input_tokens": 8957,
+      "output_tokens": 1133,
+      "cache_read": 16906650,
+      "cache_creation": 3984180,
+      "tool_calls": 102
+    },
+    {
+      "id": "f3f04574-86eb-486f-b75a-c6488fc5eb11",
+      "project": "-",
+      "cwd": "/",
+      "git_branch": "",
+      "first_timestamp": "2026-01-13T02:48:18.543Z",
+      "last_timestamp": "2026-01-13T02:47:16.260Z",
+      "message_count": 85,
+      "input_tokens": 4629,
+      "output_tokens": 3220,
+      "cache_read": 1162461,
+      "cache_creation": 179532,
+      "tool_calls": 18
+    },
+    {
+      "id": "574424fc-abf7-4524-91f4-a85b18b418da",
+      "project": "-",
+      "cwd": "/",
+      "git_branch": "",
+      "first_timestamp": "2026-01-12T22:37:11.073Z",
+      "last_timestamp": "2026-01-12T22:35:51.970Z",
+      "message_count": 33,
+      "input_tokens": 4184,
+      "output_tokens": 2864,
+      "cache_read": 369716,
+      "cache_creation": 77290,
+      "tool_calls": 6
+    }
+  ],
+  "tool_sequences": [
+    {
+      "sequence": "Bash -> Bash",
+      "count": 2217
+    },
+    {
+      "sequence": "Read -> Read",
+      "count": 995
+    },
+    {
+      "sequence": "Edit -> Edit",
+      "count": 560
+    },
+    {
+      "sequence": "Write -> Write",
+      "count": 530
+    },
+    {
+      "sequence": "Bash -> Read",
+      "count": 423
+    },
+    {
+      "sequence": "Read -> Edit",
+      "count": 327
+    },
+    {
+      "sequence": "Read -> Bash",
+      "count": 279
+    },
+    {
+      "sequence": "TodoWrite -> Bash",
+      "count": 185
+    },
+    {
+      "sequence": "Write -> TodoWrite",
+      "count": 184
+    },
+    {
+      "sequence": "Edit -> TodoWrite",
+      "count": 168
+    },
+    {
+      "sequence": "mcp__gmail__read_email -> mcp__gmail__read_email",
+      "count": 166
+    },
+    {
+      "sequence": "TodoWrite -> Write",
+      "count": 156
+    },
+    {
+      "sequence": "AskUserQuestion -> AskUserQuestion",
+      "count": 152
+    },
+    {
+      "sequence": "Glob -> Glob",
+      "count": 151
+    },
+    {
+      "sequence": "Edit -> Bash",
+      "count": 151
+    },
+    {
+      "sequence": "Bash -> TodoWrite",
+      "count": 142
+    },
+    {
+      "sequence": "TodoWrite -> Read",
+      "count": 139
+    },
+    {
+      "sequence": "Edit -> Read",
+      "count": 120
+    },
+    {
+      "sequence": "mcp__airtable__list_records -> mcp__airtable__list_records",
+      "count": 101
+    },
+    {
+      "sequence": "Read -> Write",
+      "count": 98
+    },
+    {
+      "sequence": "Grep -> Read",
+      "count": 95
+    },
+    {
+      "sequence": "Bash -> Write",
+      "count": 95
+    },
+    {
+      "sequence": "Write -> Bash",
+      "count": 92
+    },
+    {
+      "sequence": "TodoWrite -> Edit",
+      "count": 90
+    },
+    {
+      "sequence": "Glob -> Bash",
+      "count": 81
+    },
+    {
+      "sequence": "Glob -> Read",
+      "count": 79
+    },
+    {
+      "sequence": "Grep -> Grep",
+      "count": 71
+    },
+    {
+      "sequence": "Read -> TodoWrite",
+      "count": 66
+    },
+    {
+      "sequence": "Read -> Grep",
+      "count": 66
+    },
+    {
+      "sequence": "Read -> Glob",
+      "count": 62
+    }
+  ]
+}

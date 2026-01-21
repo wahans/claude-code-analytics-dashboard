@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Code Analytics Dashboard</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/recharts@2.10.3/umd/Recharts.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --border: #30363d;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted: #6e7681;
+            --accent: #58a6ff;
+            --accent-secondary: #3fb950;
+            --warning: #d29922;
+            --danger: #f85149;
+            --purple: #a371f7;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+        .app { display: flex; min-height: 100vh; }
+        .sidebar {
+            width: 220px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            padding: 20px 0;
+            position: fixed;
+            height: 100vh;
+        }
+        .sidebar-header { padding: 0 16px 16px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+        .sidebar-header h1 { font-size: 16px; font-weight: 600; }
+        .sidebar-header p { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+        .nav-item {
+            display: flex; align-items: center; padding: 10px 16px;
+            color: var(--text-secondary); cursor: pointer; font-size: 13px;
+        }
+        .nav-item:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+        .nav-item.active { background: var(--bg-tertiary); color: var(--text-primary); border-left: 2px solid var(--accent); }
+        .nav-icon { width: 24px; margin-right: 10px; }
+        .main { flex: 1; margin-left: 220px; padding: 24px; }
+        .page-header { margin-bottom: 24px; }
+        .page-header h2 { font-size: 22px; font-weight: 600; }
+        .page-header p { color: var(--text-secondary); margin-top: 4px; font-size: 14px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .card-label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .card-value { font-size: 28px; font-weight: 600; }
+        .card-value.blue { color: var(--accent); }
+        .card-value.green { color: var(--accent-secondary); }
+        .card-value.yellow { color: var(--warning); }
+        .card-value.purple { color: var(--purple); }
+        .card-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+        .chart-box { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 24px; }
+        .chart-title { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        @media (max-width: 1100px) { .two-col { grid-template-columns: 1fr; } }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--border); font-size: 13px; }
+        th { font-size: 11px; text-transform: uppercase; color: var(--text-secondary); }
+        tr:hover { background: var(--bg-tertiary); }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+        .badge-blue { background: rgba(88,166,255,0.15); color: var(--accent); }
+        .badge-green { background: rgba(63,185,80,0.15); color: var(--accent-secondary); }
+        .badge-purple { background: rgba(163,113,247,0.15); color: var(--purple); }
+        .badge-yellow { background: rgba(210,153,34,0.15); color: var(--warning); }
+        .bar-bg { height: 8px; background: var(--bg-tertiary); border-radius: 4px; }
+        .bar-fill { height: 100%; background: var(--accent); border-radius: 4px; }
+        .toggle { display: inline-flex; gap: 4px; background: var(--bg-tertiary); padding: 3px; border-radius: 6px; }
+        .toggle-btn { padding: 6px 12px; border: none; background: transparent; color: var(--text-secondary); cursor: pointer; border-radius: 4px; font-size: 12px; }
+        .toggle-btn.active { background: var(--accent); color: white; }
+        .health-item { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+        .health-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 14px; }
+        .health-icon.good { background: rgba(63,185,80,0.15); color: var(--accent-secondary); }
+        .health-icon.warn { background: rgba(210,153,34,0.15); color: var(--warning); }
+        .health-text h4 { font-size: 13px; font-weight: 500; }
+        .health-text p { font-size: 12px; color: var(--text-secondary); }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script>
+        const e = React.createElement;
+        const { useState } = React;
+        const { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } = Recharts;
+
+        const DATA = {"generated_at":"2026-01-20T22:24:54.173787","summary":{"total_sessions":130,"total_jsonl_files":270,"total_input_tokens":2804486,"total_output_tokens":2687863,"total_cache_read":1548984164,"total_cache_creation":280649636,"cache_hit_rate":84.5,"estimated_cost_sonnet":1557.45,"estimated_cost_opus":7787.25,"total_tool_calls":9590,"total_mcp_calls":546,"unique_tools":47,"unique_mcp_servers":5,"unique_subagents":5,"unique_projects":7},"tools":[{"name":"Bash","count":3192},{"name":"Read","count":1984},{"name":"Edit","count":1109},{"name":"Write","count":933},{"name":"TodoWrite","count":694},{"name":"Glob","count":354},{"name":"AskUserQuestion","count":262},{"name":"Grep","count":256},{"name":"mcp__gmail__read_email","count":185},{"name":"mcp__airtable__list_records","count":114},{"name":"Task","count":79},{"name":"WebFetch","count":60},{"name":"WebSearch","count":50}],"mcp_servers":[{"server":"gmail","count":268},{"server":"airtable","count":211},{"server":"outlook-assistant","count":33},{"server":"spawner","count":19},{"server":"slack","count":15}],"subagents":[{"type":"Explore","count":67},{"type":"Bash","count":6},{"type":"Plan","count":4},{"type":"Research Analyst Agent","count":1},{"type":"clea","count":1}],"daily_usage":[{"date":"2026-01-08","input":8196,"output":155591},{"date":"2026-01-09","input":9275,"output":52185},{"date":"2026-01-10","input":40408,"output":177010},{"date":"2026-01-11","input":113785,"output":527283},{"date":"2026-01-12","input":452516,"output":446949},{"date":"2026-01-13","input":951306,"output":827272},{"date":"2026-01-14","input":91312,"output":354503},{"date":"2026-01-15","input":85306,"output":59007},{"date":"2026-01-16","input":42310,"output":75735},{"date":"2026-01-17","input":221087,"output":4033},{"date":"2026-01-18","input":180668,"output":1286},{"date":"2026-01-19","input":99991,"output":2629},{"date":"2026-01-20","input":424263,"output":2174}],"hourly_distribution":[{"hour":0,"count":473},{"hour":1,"count":4},{"hour":2,"count":215},{"hour":3,"count":1333},{"hour":4,"count":2211},{"hour":5,"count":4908},{"hour":6,"count":4333},{"hour":7,"count":3891},{"hour":8,"count":3742},{"hour":9,"count":1492},{"hour":10,"count":0},{"hour":11,"count":0},{"hour":12,"count":0},{"hour":13,"count":0},{"hour":14,"count":67},{"hour":15,"count":566},{"hour":16,"count":816},{"hour":17,"count":740},{"hour":18,"count":530},{"hour":19,"count":1403},{"hour":20,"count":1046},{"hour":21,"count":1360},{"hour":22,"count":1864},{"hour":23,"count":1149}],"projects":[{"name":"~","sessions":103,"tokens":2683099},{"name":"/","sessions":21,"tokens":2206746},{"name":"~/Desktop/crosslayer/projects/crosslayer-os","sessions":2,"tokens":480128},{"name":"~/Desktop/sandbox","sessions":1,"tokens":111823}],"tool_sequences":[{"sequence":"Bash -> Bash","count":2217},{"sequence":"Read -> Read","count":995},{"sequence":"Edit -> Edit","count":560},{"sequence":"Write -> Write","count":530},{"sequence":"Bash -> Read","count":423},{"sequence":"Read -> Edit","count":327},{"sequence":"Read -> Bash","count":279},{"sequence":"TodoWrite -> Bash","count":185}]};
+
+        const COLORS = ['#58a6ff','#3fb950','#a371f7','#db61a2','#d29922','#f85149'];
+        const fmt = n => n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e3 ? (n/1e3).toFixed(1)+'K' : n.toString();
+        const fmtMoney = n => '$' + n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+        function Card({label, value, color, sub}) {
+            return e('div', {className:'card'},
+                e('div', {className:'card-label'}, label),
+                e('div', {className:'card-value ' + (color||'')}, value),
+                sub && e('div', {className:'card-sub'}, sub)
+            );
+        }
+
+        function Overview() {
+            const [model, setModel] = useState('sonnet');
+            const s = DATA.summary;
+            const coreTools = DATA.tools.filter(t => !t.name.startsWith('mcp__')).slice(0,8);
+
+            return e('div', null,
+                e('div', {className:'page-header'},
+                    e('h2', null, 'Overview'),
+                    e('p', null, 'Summary of your Claude Code usage')
+                ),
+                e('div', {className:'grid'},
+                    e(Card, {label:'Total Sessions', value:s.total_sessions, color:'blue', sub:s.unique_projects + ' projects'}),
+                    e(Card, {label:'Tool Calls', value:fmt(s.total_tool_calls), color:'green', sub:s.unique_tools + ' unique tools'}),
+                    e(Card, {label:'MCP Calls', value:fmt(s.total_mcp_calls), color:'purple', sub:s.unique_mcp_servers + ' servers'}),
+                    e('div', {className:'card'},
+                        e('div', {className:'card-label'}, 'Estimated Cost'),
+                        e('div', {className:'card-value yellow'}, fmtMoney(model==='sonnet' ? s.estimated_cost_sonnet : s.estimated_cost_opus)),
+                        e('div', {className:'toggle', style:{marginTop:'8px'}},
+                            e('button', {className:'toggle-btn'+(model==='sonnet'?' active':''), onClick:()=>setModel('sonnet')}, 'Sonnet'),
+                            e('button', {className:'toggle-btn'+(model==='opus'?' active':''), onClick:()=>setModel('opus')}, 'Opus')
+                        )
+                    )
+                ),
+                e('div', {className:'two-col'},
+                    e('div', {className:'chart-box'},
+                        e('div', {className:'chart-title'}, 'Daily Token Usage'),
+                        e(ResponsiveContainer, {width:'100%', height:220},
+                            e(AreaChart, {data:DATA.daily_usage},
+                                e(CartesianGrid, {strokeDasharray:'3 3', stroke:'#30363d'}),
+                                e(XAxis, {dataKey:'date', tick:{fill:'#8b949e',fontSize:10}, tickFormatter:d=>d.slice(5)}),
+                                e(YAxis, {tick:{fill:'#8b949e',fontSize:10}, tickFormatter:fmt}),
+                                e(Tooltip, {contentStyle:{background:'#161b22',border:'1px solid #30363d',borderRadius:'6px'}}),
+                                e(Area, {type:'monotone', dataKey:'output', stackId:'1', stroke:'#3fb950', fill:'#3fb950', fillOpacity:0.3, name:'Output'}),
+                                e(Area, {type:'monotone', dataKey:'input', stackId:'1', stroke:'#58a6ff', fill:'#58a6ff', fillOpacity:0.3, name:'Input'})
+                            )
+                        )
+                    ),
+                    e('div', {className:'chart-box'},
+                        e('div', {className:'chart-title'}, 'Top Tools'),
+                        e(ResponsiveContainer, {width:'100%', height:220},
+                            e(BarChart, {data:coreTools, layout:'vertical'},
+                                e(CartesianGrid, {strokeDasharray:'3 3', stroke:'#30363d'}),
+                                e(XAxis, {type:'number', tick:{fill:'#8b949e',fontSize:10}}),
+                                e(YAxis, {dataKey:'name', type:'category', tick:{fill:'#8b949e',fontSize:10}, width:90}),
+                                e(Tooltip, {contentStyle:{background:'#161b22',border:'1px solid #30363d',borderRadius:'6px'}}),
+                                e(Bar, {dataKey:'count', fill:'#58a6ff', radius:[0,4,4,0]})
+                            )
+                        )
+                    )
+                ),
+                e('div', {className:'two-col'},
+                    e('div', {className:'chart-box'},
+                        e('div', {className:'chart-title'}, 'MCP Servers'),
+                        e(ResponsiveContainer, {width:'100%', height:180},
+                            e(PieChart, null,
+                                e(Pie, {data:DATA.mcp_servers, cx:'50%', cy:'50%', innerRadius:40, outerRadius:70, paddingAngle:2, dataKey:'count', nameKey:'server'},
+                                    DATA.mcp_servers.map((d,i) => e(Cell, {key:i, fill:COLORS[i%COLORS.length]}))
+                                ),
+                                e(Tooltip, {contentStyle:{background:'#161b22',border:'1px solid #30363d',borderRadius:'6px'}}),
+                                e(Legend, {formatter:v => e('span',{style:{color:'#e6edf3',fontSize:'11px'}},v)})
+                            )
+                        )
+                    ),
+                    e('div', {className:'chart-box'},
+                        e('div', {className:'chart-title'}, 'Subagents'),
+                        e(ResponsiveContainer, {width:'100%', height:180},
+                            e(BarChart, {data:DATA.subagents},
+                                e(CartesianGrid, {strokeDasharray:'3 3', stroke:'#30363d'}),
+                                e(XAxis, {dataKey:'type', tick:{fill:'#8b949e',fontSize:9}}),
+                                e(YAxis, {tick:{fill:'#8b949e',fontSize:10}}),
+                                e(Tooltip, {contentStyle:{background:'#161b22',border:'1px solid #30363d',borderRadius:'6px'}}),
+                                e(Bar, {dataKey:'count', fill:'#a371f7', radius:[4,4,0,0]})
+                            )
+                        )
+                    )
+                )
+            );
+        }
+
+        function Tokens() {
+            const [model, setModel] = useState('sonnet');
+            const s = DATA.summary;
+            return e('div', null,
+                e('div', {className:'page-header'},
+                    e('h2', null, 'Token & Cost Analytics'),
+                    e('p', null, 'Detailed breakdown of usage and costs')
+                ),
+                e('div', {className:'toggle', style:{marginBottom:'20px'}},
+                    e('button', {className:'toggle-btn'+(model==='sonnet'?' active':''), onClick:()=>setModel('sonnet')}, 'Sonnet ($3/$15)'),
+                    e('button', {className:'toggle-btn'+(model==='opus'?' active':''), onClick:()=>setModel('opus')}, 'Opus ($15/$75)')
+                ),
+                e('div', {className:'grid'},
+                    e(Card, {label:'Input Tokens', value:fmt(s.total_input_tokens), color:'blue'}),
+                    e(Card, {label:'Output Tokens', value:fmt(s.total_output_tokens), color:'green'}),
+                    e(Card, {label:'Cache Read', value:fmt(s.total_cache_read), color:'purple', sub:'90% discount'}),
+                    e(Card, {label:'Cache Creation', value:fmt(s.total_cache_creation), color:'yellow', sub:'25% premium'})
+                ),
+                e('div', {className:'two-col'},
+                    e('div', {className:'chart-box', style:{textAlign:'center',padding:'40px'}},
+                        e('div', {className:'chart-title'}, 'Estimated Total Cost'),
+                        e('div', {style:{fontSize:'48px',fontWeight:'700',color:'#d29922'}}, fmtMoney(model==='sonnet'?s.estimated_cost_sonnet:s.estimated_cost_opus)),
+                        e('div', {style:{color:'#8b949e',marginTop:'8px'}}, 'Based on ' + (model==='sonnet'?'Sonnet 4':'Opus 4.5') + ' pricing')
+                    ),
+                    e('div', {className:'chart-box', style:{textAlign:'center',padding:'40px'}},
+                        e('div', {className:'chart-title'}, 'Cache Efficiency'),
+                        e('div', {style:{fontSize:'48px',fontWeight:'700',color:s.cache_hit_rate>70?'#3fb950':'#d29922'}}, s.cache_hit_rate + '%'),
+                        e('div', {style:{color:'#8b949e',marginTop:'8px'}}, 'Cache hit rate'),
+                        e('div', {className:'bar-bg', style:{maxWidth:'200px',margin:'16px auto 0'}},
+                            e('div', {className:'bar-fill', style:{width:s.cache_hit_rate+'%', background:s.cache_hit_rate>70?'#3fb950':'#d29922'}})
+                        )
+                    )
+                ),
+                e('div', {className:'chart-box'},
+                    e('div', {className:'chart-title'}, 'Daily Token Breakdown'),
+                    e(ResponsiveContainer, {width:'100%', height:280},
+                        e(LineChart, {data:DATA.daily_usage},
+                            e(CartesianGrid, {strokeDasharray:'3 3', stroke:'#30363d'}),
+                            e(XAxis, {dataKey:'date', tick:{fill:'#8b949e',fontSize:10}, tickFormatter:d=>d.slice(5)}),
+                            e(YAxis, {tick:{fill:'#8b949e',fontSize:10}, tickFormatter:fmt}),
+                            e(Tooltip, {contentStyle:{background:'#161b22',border:'1px solid #30363d',borderRadius:'6px'}, formatter:fmt}),
+                            e(Legend),
+                            e(Line, {type:'monotone', dataKey:'input', stroke:'#58a6ff', strokeWidth:2, dot:false, name:'Input'}),
+                            e(Line, {type:'monotone', dataKey:'output', stroke:'#3fb950', strokeWidth:2, dot:false, name:'Output'})
+                        )
+                    )
+                )
+            );
+        }
+
+        function Tools() {
+            const coreTools = DATA.tools.filter(t => !t.name.startsWith('mcp__'));
+            const maxCount = Math.max(...coreTools.map(t=>t.count));
+            const badges = ['badge-blue','badge-green','badge-purple','badge-yellow'];
+            return e('div', null,
+                e('div', {className:'page-header'},
+                    e('h2', null, 'Tool Usage Analytics'),
+                    e('p', null, 'Which tools Claude uses most')
+                ),
+                e('div', {className:'grid'},
+                    e(Card, {label:'Total Tool Calls', value:fmt(DATA.summary.total_tool_calls), color:'blue'}),
+                    e(Card, {label:'Unique Tools', value:DATA.summary.unique_tools, color:'green'}),
+                    e(Card, {label:'Most Used', value:coreTools[0].name, color:'purple', sub:fmt(coreTools[0].count)+' calls'})
+                ),
+                e('div', {className:'two-col'},
+                    e('div', {className:'chart-box'},
+                        e('div', {className:'chart-title'}, 'Tool Distribution'),
+                        e('table', null,
+                            e('thead', null, e('tr', null, e('th',null,'Tool'), e('th',null,'Count'), e('th',{style:{width:'40%'}},'Usage'))),
+                            e('tbody', null, coreTools.slice(0,10).map((t,i) =>
+                                e('tr', {key:t.name},
+                                    e('td', null, e('span',{className:'badge '+badges[i%4]}, t.name)),
+                                    e('td', null, fmt(t.count)),
+                                    e('td', null, e('div',{className:'bar-bg'}, e('div',{className:'bar-fill',style:{width:(t.count/maxCount*100)+'%'}})))
+                                )
+                            ))
+                        )
+                    ),
+                    e('div', {className:'chart-box'},
+                        e('div', {className:'chart-title'}, 'Common Tool Sequences'),
+                        e('table', null,
+                            e('thead', null, e('tr', null, e('th',null,'Sequence'), e('th',null,'Count'))),
+                            e('tbody', null, DATA.tool_sequences.map(s =>
+                                e('tr', {key:s.sequence},
+                                    e('td', {style:{fontFamily:'monospace',fontSize:'12px'}}, s.sequence),
+                                    e('td', null, fmt(s.count))
+                                )
+                            ))
+                        )
+                    )
+                ),
+                e('div', {className:'chart-box'},
+                    e('div', {className:'chart-title'}, 'Activity by Hour'),
+                    e(ResponsiveContainer, {width:'100%', height:200},
+                        e(BarChart, {data:DATA.hourly_distribution},
+                            e(CartesianGrid, {strokeDasharray:'3 3', stroke:'#30363d'}),
+                            e(XAxis, {dataKey:'hour', tick:{fill:'#8b949e',fontSize:10}, tickFormatter:h=>h+':00'}),
+                            e(YAxis, {tick:{fill:'#8b949e',fontSize:10}}),
+                            e(Tooltip, {contentStyle:{background:'#161b22',border:'1px solid #30363d',borderRadius:'6px'}}),
+                            e(Bar, {dataKey:'count', fill:'#58a6ff', radius:[2,2,0,0]})
+                        )
+                    )
+                )
+            );
+        }
+
+        function MCP() {
+            return e('div', null,
+                e('div', {className:'page-header'},
+                    e('h2', null, 'MCP Server Analytics'),
+                    e('p', null, 'Model Context Protocol server usage')
+                ),
+                e('div', {className:'grid'},
+                    e(Card, {label:'Total MCP Calls', value:fmt(DATA.summary.total_mcp_calls), color:'blue'}),
+                    e(Card, {label:'Active Servers', value:DATA.summary.unique_mcp_servers, color:'green'}),
+                    e(Card, {label:'Most Used', value:DATA.mcp_servers[0].server, color:'purple', sub:fmt(DATA.mcp_servers[0].count)+' calls'})
+                ),
+                e('div', {className:'chart-box'},
+                    e('div', {className:'chart-title'}, 'MCP Server Usage'),
+                    e(ResponsiveContainer, {width:'100%', height:280},
+                        e(BarChart, {data:DATA.mcp_servers},
+                            e(CartesianGrid, {strokeDasharray:'3 3', stroke:'#30363d'}),
+                            e(XAxis, {dataKey:'server', tick:{fill:'#8b949e',fontSize:11}}),
+                            e(YAxis, {tick:{fill:'#8b949e',fontSize:10}}),
+                            e(Tooltip, {contentStyle:{background:'#161b22',border:'1px solid #30363d',borderRadius:'6px'}}),
+                            e(Bar, {dataKey:'count', fill:'#a371f7', radius:[4,4,0,0]})
+                        )
+                    )
+                ),
+                e('div', {className:'chart-box'},
+                    e('div', {className:'chart-title'}, 'Server Details'),
+                    e('table', null,
+                        e('thead', null, e('tr', null, e('th',null,'Server'), e('th',null,'Calls'), e('th',null,'% of Total'))),
+                        e('tbody', null, DATA.mcp_servers.map(s =>
+                            e('tr', {key:s.server},
+                                e('td', null, e('span',{className:'badge badge-purple'}, s.server)),
+                                e('td', null, fmt(s.count)),
+                                e('td', null, ((s.count/DATA.summary.total_mcp_calls)*100).toFixed(1)+'%')
+                            )
+                        ))
+                    )
+                )
+            );
+        }
+
+        function Subagents() {
+            const total = DATA.subagents.reduce((s,a)=>s+a.count,0);
+            return e('div', null,
+                e('div', {className:'page-header'},
+                    e('h2', null, 'Subagent Analytics'),
+                    e('p', null, 'Task tool with specialized subagents')
+                ),
+                e('div', {className:'grid'},
+                    e(Card, {label:'Total Task Calls', value:DATA.tools.find(t=>t.name==='Task')?.count||0, color:'blue'}),
+                    e(Card, {label:'Unique Subagents', value:DATA.summary.unique_subagents, color:'green'}),
+                    e(Card, {label:'Most Used', value:DATA.subagents[0].type, color:'purple', sub:DATA.subagents[0].count+' calls'})
+                ),
+                e('div', {className:'two-col'},
+                    e('div', {className:'chart-box'},
+                        e('div', {className:'chart-title'}, 'Subagent Distribution'),
+                        e(ResponsiveContainer, {width:'100%', height:220},
+                            e(PieChart, null,
+                                e(Pie, {data:DATA.subagents, cx:'50%', cy:'50%', innerRadius:40, outerRadius:80, paddingAngle:2, dataKey:'count', nameKey:'type', label:({type,percent})=>type+' '+Math.round(percent*100)+'%'},
+                                    DATA.subagents.map((d,i) => e(Cell, {key:i, fill:COLORS[i%COLORS.length]}))
+                                ),
+                                e(Tooltip, {contentStyle:{background:'#161b22',border:'1px solid #30363d',borderRadius:'6px'}})
+                            )
+                        )
+                    ),
+                    e('div', {className:'chart-box'},
+                        e('div', {className:'chart-title'}, 'Subagent Usage'),
+                        e('table', null,
+                            e('thead', null, e('tr', null, e('th',null,'Type'), e('th',null,'Count'), e('th',null,'%'))),
+                            e('tbody', null, DATA.subagents.map(s =>
+                                e('tr', {key:s.type},
+                                    e('td', null, e('span',{className:'badge badge-blue'}, s.type)),
+                                    e('td', null, s.count),
+                                    e('td', null, ((s.count/total)*100).toFixed(1)+'%')
+                                )
+                            ))
+                        )
+                    )
+                )
+            );
+        }
+
+        function Sessions() {
+            return e('div', null,
+                e('div', {className:'page-header'},
+                    e('h2', null, 'Session Analytics'),
+                    e('p', null, 'Breakdown by session and project')
+                ),
+                e('div', {className:'grid'},
+                    e(Card, {label:'Total Sessions', value:DATA.summary.total_sessions, color:'blue'}),
+                    e(Card, {label:'Unique Projects', value:DATA.summary.unique_projects, color:'green'}),
+                    e(Card, {label:'JSONL Files', value:DATA.summary.total_jsonl_files, color:'purple'})
+                ),
+                e('div', {className:'chart-box'},
+                    e('div', {className:'chart-title'}, 'Tokens by Project'),
+                    e(ResponsiveContainer, {width:'100%', height:220},
+                        e(BarChart, {data:DATA.projects, layout:'vertical'},
+                            e(CartesianGrid, {strokeDasharray:'3 3', stroke:'#30363d'}),
+                            e(XAxis, {type:'number', tick:{fill:'#8b949e',fontSize:10}, tickFormatter:fmt}),
+                            e(YAxis, {dataKey:'name', type:'category', tick:{fill:'#8b949e',fontSize:10}, width:200}),
+                            e(Tooltip, {contentStyle:{background:'#161b22',border:'1px solid #30363d',borderRadius:'6px'}, formatter:fmt}),
+                            e(Bar, {dataKey:'tokens', fill:'#3fb950', radius:[0,4,4,0]})
+                        )
+                    )
+                )
+            );
+        }
+
+        function Health() {
+            const s = DATA.summary;
+            const checks = [
+                {status:'good', icon:'\u2713', title:'Excellent cache efficiency', desc:s.cache_hit_rate+'% cache hit rate saves significant costs'},
+                {status:'good', icon:'\u2713', title:'Good MCP utilization', desc:s.unique_mcp_servers+' MCP servers actively used'},
+                {status:'good', icon:'\u2713', title:'Effective subagent usage', desc:'Explore agent used for codebase exploration'},
+                {status:'good', icon:'\u2713', title:'Diverse tool usage', desc:'Using '+s.unique_tools+' different tools'},
+            ];
+            return e('div', null,
+                e('div', {className:'page-header'},
+                    e('h2', null, 'Configuration Health'),
+                    e('p', null, 'Recommendations to optimize your setup')
+                ),
+                e('div', {className:'two-col'},
+                    e('div', {className:'chart-box'},
+                        e('div', {className:'chart-title'}, 'Health Checks'),
+                        checks.map((c,i) => e('div', {className:'health-item', key:i},
+                            e('div', {className:'health-icon '+c.status}, c.icon),
+                            e('div', {className:'health-text'},
+                                e('h4', null, c.title),
+                                e('p', null, c.desc)
+                            )
+                        ))
+                    ),
+                    e('div', {className:'chart-box'},
+                        e('div', {className:'chart-title'}, 'Cost Comparison'),
+                        e('div', {className:'health-item'},
+                            e('div', {className:'health-icon good'}, '$'),
+                            e('div', {className:'health-text'},
+                                e('h4', null, 'Sonnet 4 Estimate'),
+                                e('p', null, fmtMoney(s.estimated_cost_sonnet))
+                            )
+                        ),
+                        e('div', {className:'health-item'},
+                            e('div', {className:'health-icon warn'}, '$'),
+                            e('div', {className:'health-text'},
+                                e('h4', null, 'Opus 4.5 Estimate'),
+                                e('p', null, fmtMoney(s.estimated_cost_opus) + ' (5x Sonnet)')
+                            )
+                        ),
+                        e('div', {className:'health-item'},
+                            e('div', {className:'health-icon good'}, '\u2713'),
+                            e('div', {className:'health-text'},
+                                e('h4', null, 'Cache Savings'),
+                                e('p', null, s.cache_hit_rate+'% of input served from cache at 90% discount')
+                            )
+                        )
+                    )
+                )
+            );
+        }
+
+        function App() {
+            const [page, setPage] = useState('overview');
+            const navItems = [
+                {id:'overview', icon:'\uD83D\uDCCA', label:'Overview'},
+                {id:'tokens', icon:'\uD83D\uDD22', label:'Token & Cost'},
+                {id:'tools', icon:'\uD83D\uDD27', label:'Tool Usage'},
+                {id:'mcp', icon:'\uD83D\uDD0C', label:'MCP Servers'},
+                {id:'subagents', icon:'\uD83E\uDD16', label:'Subagents'},
+                {id:'sessions', icon:'\uD83D\uDCC1', label:'Sessions'},
+                {id:'health', icon:'\uD83D\uDC9A', label:'Config Health'}
+            ];
+
+            const pages = {overview:Overview, tokens:Tokens, tools:Tools, mcp:MCP, subagents:Subagents, sessions:Sessions, health:Health};
+            const PageComponent = pages[page];
+
+            return e('div', {className:'app'},
+                e('div', {className:'sidebar'},
+                    e('div', {className:'sidebar-header'},
+                        e('h1', null, 'Claude Code Analytics'),
+                        e('p', null, 'Generated ' + new Date(DATA.generated_at).toLocaleDateString())
+                    ),
+                    navItems.map(item =>
+                        e('div', {
+                            key: item.id,
+                            className: 'nav-item' + (page===item.id?' active':''),
+                            onClick: () => setPage(item.id)
+                        },
+                            e('span', {className:'nav-icon'}, item.icon),
+                            item.label
+                        )
+                    )
+                ),
+                e('div', {className:'main'}, e(PageComponent))
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(e(App));
+    </script>
+</body>
+</html>
