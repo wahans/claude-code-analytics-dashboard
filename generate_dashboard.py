@@ -59,6 +59,59 @@ def calc_cost(tokens, pricing):
     return round(cost, 4)
 
 
+def generate_cost_insight(session):
+    """Generate a 1-2 line cost-saving insight based on session patterns."""
+    tokens = session['tokens']
+    tools = session['tool_calls']
+    subagents = len(session['subagent_calls'])
+    turns = session['turns']
+
+    insights = []
+
+    # Check output/input ratio - high output is expensive
+    if tokens['output'] > 0 and tokens['input'] > 0:
+        output_ratio = tokens['output'] / tokens['input']
+        if output_ratio > 0.3:
+            insights.append(('output', f"High output ratio ({output_ratio:.0%}). Consider asking for more concise responses."))
+
+    # Check cache efficiency
+    total_input = tokens['input'] + tokens['cache_read']
+    if total_input > 0:
+        cache_rate = tokens['cache_read'] / total_input
+        if cache_rate < 0.5 and total_input > 100000:
+            insights.append(('cache', f"Low cache rate ({cache_rate:.0%}). Breaking into smaller sessions could improve caching."))
+
+    # Check for many subagent spawns
+    if subagents > 5:
+        insights.append(('subagents', f"{subagents} subagents spawned. Consolidating tasks could reduce overhead."))
+
+    # Check for many turns (long conversation)
+    if turns > 50:
+        insights.append(('turns', f"{turns} turns in session. Clearer upfront requirements could reduce back-and-forth."))
+
+    # Check for heavy file reading
+    read_calls = tools.get('Read', 0) + tools.get('Glob', 0) + tools.get('Grep', 0)
+    if read_calls > 100:
+        insights.append(('reads', f"{read_calls} file operations. Providing more context upfront could reduce exploration."))
+
+    # Check for Task tool overuse (spawning agents repeatedly)
+    task_calls = tools.get('Task', 0)
+    if task_calls > 10:
+        insights.append(('tasks', f"{task_calls} Task calls. Consider batching related work to reduce agent spawning."))
+
+    # Pick the most impactful insight (prioritize by potential savings)
+    priority = ['output', 'cache', 'turns', 'subagents', 'tasks', 'reads']
+    for p in priority:
+        for (key, msg) in insights:
+            if key == p:
+                return msg
+
+    # Default insight if nothing specific found
+    if tokens['output'] > 500000:
+        return "Large session. Consider /clear between distinct tasks to reset context."
+    return "Review session for opportunities to provide clearer, more specific prompts."
+
+
 def extract_session_data(entries, filepath, projects_path):
     """Extract comprehensive data from a single session's entries."""
     session_data = {
@@ -321,6 +374,10 @@ def analyze_claude_folder(claude_dir):
     for s in expensive_sessions:
         # Get top tools for this session
         top_tools = sorted(s['tool_calls'].items(), key=lambda x: -x[1])[:5]
+
+        # Generate cost-saving insight
+        insight = generate_cost_insight(s)
+
         session_insights.append({
             'session_id': s['session_id'][:8] if s['session_id'] else 'unknown',
             'project': s['project'],
@@ -328,11 +385,13 @@ def analyze_claude_folder(claude_dir):
             'cost_opus': s['cost_opus'],
             'tokens_in': s['tokens']['input'],
             'tokens_out': s['tokens']['output'],
+            'cache_read': s['tokens']['cache_read'],
             'turns': s['turns'],
             'date': s['first_timestamp'][:10] if s['first_timestamp'] else 'unknown',
             'top_tools': [{'name': t[0], 'count': t[1]} for t in top_tools],
             'subagents_used': len(s['subagent_calls']),
-            'mcp_servers_used': list(s['mcp_calls'].keys())
+            'mcp_servers_used': list(s['mcp_calls'].keys()),
+            'cost_insight': insight
         })
 
     return {

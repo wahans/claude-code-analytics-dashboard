@@ -113,6 +113,9 @@
         .session-meta-item { font-size: 12px; }
         .session-meta-item span { color: #8b949e; }
         .session-tools { display: flex; flex-wrap: wrap; gap: 6px; }
+        .session-insight { margin-top: 12px; padding: 10px 12px; background: #1c2128; border-radius: 6px; border-left: 3px solid #d29922; display: flex; align-items: flex-start; gap: 8px; }
+        .insight-icon { font-size: 14px; flex-shrink: 0; }
+        .insight-text { font-size: 12px; color: #c9d1d9; line-height: 1.4; }
     </style>
 </head>
 <body>
@@ -623,6 +626,10 @@
                     <div class="session-tools">
                         ${s.top_tools.map(t => `<span class="func-tag">${t.name}: ${t.count}</span>`).join('')}
                         ${s.mcp_servers_used.length > 0 ? s.mcp_servers_used.map(m => `<span class="func-tag" style="background:#2d333b">MCP:${m}</span>`).join('') : ''}
+                    </div>
+                    <div class="session-insight">
+                        <span class="insight-icon">💡</span>
+                        <span class="insight-text">${s.cost_insight || 'Review session for optimization opportunities.'}</span>
                     </div>
                 </div>
             `).join('');
