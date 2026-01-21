@@ -20,6 +20,7 @@
             padding: 20px 0;
             position: fixed;
             height: 100vh;
+            overflow-y: auto;
         }
         .sidebar-header { padding: 0 16px 16px; border-bottom: 1px solid #30363d; margin-bottom: 12px; }
         .sidebar-header h1 { font-size: 16px; font-weight: 600; }
@@ -36,6 +37,8 @@
         .page-header h2 { font-size: 22px; font-weight: 600; }
         .page-header p { color: #8b949e; margin-top: 4px; font-size: 14px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .grid-4 { grid-template-columns: repeat(4, 1fr); }
+        @media (max-width: 900px) { .grid-4 { grid-template-columns: repeat(2, 1fr); } }
         .card {
             background: #161b22;
             border: 1px solid #30363d;
@@ -51,6 +54,7 @@
         .card-value.green { color: #3fb950; }
         .card-value.yellow { color: #d29922; }
         .card-value.purple { color: #a371f7; }
+        .card-value.small { font-size: 20px; }
         .card-sub { font-size: 11px; color: #6e7681; margin-top: 4px; }
         .chart-box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; margin-bottom: 24px; }
         .chart-title { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
@@ -64,6 +68,7 @@
         .badge-blue { background: rgba(88,166,255,0.15); color: #58a6ff; }
         .badge-green { background: rgba(63,185,80,0.15); color: #3fb950; }
         .badge-purple { background: rgba(163,113,247,0.15); color: #a371f7; }
+        .badge-yellow { background: rgba(210,153,34,0.15); color: #d29922; }
         .bar-wrap { display: flex; align-items: center; gap: 8px; }
         .bar-bg { flex: 1; height: 8px; background: #21262d; border-radius: 4px; }
         .bar-fill { height: 100%; background: #58a6ff; border-radius: 4px; }
@@ -84,6 +89,30 @@
         .health-text h4 { font-size: 13px; font-weight: 500; }
         .health-text p { font-size: 12px; color: #8b949e; }
         .hidden { display: none; }
+
+        /* Expandable rows */
+        .expandable { cursor: pointer; }
+        .expandable td:first-child::before { content: '▶ '; font-size: 10px; color: #8b949e; }
+        .expandable.expanded td:first-child::before { content: '▼ '; }
+        .expand-content { display: none; background: #0d1117; }
+        .expand-content.show { display: table-row; }
+        .expand-content td { padding: 12px 20px; }
+        .expand-inner { background: #161b22; border-radius: 6px; padding: 12px; }
+        .sample-item { padding: 8px 0; border-bottom: 1px solid #21262d; font-size: 12px; }
+        .sample-item:last-child { border-bottom: none; }
+        .sample-label { color: #8b949e; font-size: 10px; text-transform: uppercase; margin-bottom: 4px; }
+        .sample-text { color: #e6edf3; word-break: break-word; }
+        .func-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .func-tag { background: #21262d; padding: 3px 8px; border-radius: 4px; font-size: 11px; }
+
+        /* Session cards */
+        .session-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+        .session-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .session-cost { font-size: 24px; font-weight: 600; color: #d29922; }
+        .session-meta { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
+        .session-meta-item { font-size: 12px; }
+        .session-meta-item span { color: #8b949e; }
+        .session-tools { display: flex; flex-wrap: wrap; gap: 6px; }
     </style>
 </head>
 <body>
@@ -99,6 +128,7 @@
             <div class="nav-item" data-page="mcp"><span class="nav-icon">🔌</span>MCP Servers</div>
             <div class="nav-item" data-page="subagents"><span class="nav-icon">🤖</span>Subagents</div>
             <div class="nav-item" data-page="sessions"><span class="nav-icon">📁</span>Sessions</div>
+            <div class="nav-item" data-page="insights"><span class="nav-icon">💡</span>Cost Insights</div>
             <div class="nav-item" data-page="health"><span class="nav-icon">💚</span>Config Health</div>
         </div>
         <div class="main">
@@ -248,7 +278,7 @@
             <div id="page-mcp" class="page hidden">
                 <div class="page-header">
                     <h2>MCP Server Analytics</h2>
-                    <p>Model Context Protocol server usage</p>
+                    <p>Model Context Protocol server usage - click a row to see function breakdown</p>
                 </div>
                 <div class="grid">
                     <div class="card">
@@ -266,8 +296,11 @@
                     </div>
                 </div>
                 <div class="chart-box">
-                    <div class="chart-title" title="Distribution of calls across all configured MCP servers">MCP Server Usage</div>
-                    <div class="bar-chart" id="mcp-chart"></div>
+                    <div class="chart-title" title="Click a server to see which functions are called most">MCP Server Usage (Expandable)</div>
+                    <table>
+                        <thead><tr><th>Server</th><th>Calls</th><th>Top Functions</th></tr></thead>
+                        <tbody id="mcp-table"></tbody>
+                    </table>
                 </div>
             </div>
 
@@ -275,7 +308,7 @@
             <div id="page-subagents" class="page hidden">
                 <div class="page-header">
                     <h2>Subagent Analytics</h2>
-                    <p>Task tool with specialized subagents</p>
+                    <p>Task tool with specialized subagents - click a row to see sample prompts</p>
                 </div>
                 <div class="grid">
                     <div class="card">
@@ -293,7 +326,7 @@
                     </div>
                 </div>
                 <div class="chart-box">
-                    <div class="chart-title" title="All subagent types ranked by usage with percentage of total">Subagent Distribution</div>
+                    <div class="chart-title" title="Click a subagent type to see sample prompts and descriptions">Subagent Distribution (Expandable)</div>
                     <table>
                         <thead><tr><th>Type</th><th>Count</th><th>%</th></tr></thead>
                         <tbody id="subagents-table"></tbody>
@@ -322,11 +355,41 @@
                     </div>
                 </div>
                 <div class="chart-box">
-                    <div class="chart-title" title="Total token usage breakdown by project directory">Tokens by Project</div>
+                    <div class="chart-title" title="Cost and token usage breakdown by project directory">Cost by Project</div>
                     <table>
-                        <thead><tr><th>Project</th><th>Sessions</th><th>Tokens</th></tr></thead>
+                        <thead><tr><th>Project</th><th>Sessions</th><th>Tokens</th><th>Cost (Sonnet)</th></tr></thead>
                         <tbody id="projects-table"></tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- Cost Insights Page -->
+            <div id="page-insights" class="page hidden">
+                <div class="page-header">
+                    <h2>Cost Insights</h2>
+                    <p>Your most expensive sessions and what drove the cost</p>
+                </div>
+                <div class="grid grid-4">
+                    <div class="card">
+                        <div class="card-label" title="Your single most expensive session">Top Session Cost</div>
+                        <div class="card-value yellow small" id="stat-top-session-cost">$--</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label" title="Average cost per session">Avg Session Cost</div>
+                        <div class="card-value blue small" id="stat-avg-session-cost">$--</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label" title="Cost on your most expensive day">Top Daily Cost</div>
+                        <div class="card-value purple small" id="stat-top-daily-cost">$--</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label" title="Average daily cost">Avg Daily Cost</div>
+                        <div class="card-value green small" id="stat-avg-daily-cost">$--</div>
+                    </div>
+                </div>
+                <div class="chart-box">
+                    <div class="chart-title" title="Sessions ranked by estimated cost - see what tools and patterns drive high costs">Most Expensive Sessions</div>
+                    <div id="expensive-sessions"></div>
                 </div>
             </div>
 
@@ -436,9 +499,132 @@
                         if (c.badge) return `<td><span class="badge ${badges[i%3]}">${d[c.key]}</span></td>`;
                         if (c.bar) return `<td><div class="bar-bg"><div class="bar-fill" style="width:${(d.count/maxVal)*100}%"></div></div></td>`;
                         if (c.fmt) return `<td>${fmt(d[c.key])}</td>`;
+                        if (c.money) return `<td>${fmtMoney(d[c.key])}</td>`;
                         return `<td>${d[c.key]}</td>`;
                     }).join('')}
                 </tr>
+            `).join('');
+        }
+
+        // Render expandable MCP table
+        function renderMcpTable() {
+            const el = document.getElementById('mcp-table');
+            if (!DATA.mcp || DATA.mcp.length === 0) {
+                el.innerHTML = '<tr><td colspan="3" style="color:#8b949e;text-align:center">No MCP data</td></tr>';
+                return;
+            }
+
+            let html = '';
+            DATA.mcp.forEach((m, i) => {
+                const topFuncs = m.functions.slice(0, 3).map(f => f.name).join(', ');
+                html += `
+                    <tr class="expandable" data-idx="${i}">
+                        <td><span class="badge badge-${['blue','green','purple'][i%3]}">${m.server}</span></td>
+                        <td>${m.count}</td>
+                        <td style="color:#8b949e;font-size:12px">${topFuncs}</td>
+                    </tr>
+                    <tr class="expand-content" data-idx="${i}">
+                        <td colspan="3">
+                            <div class="expand-inner">
+                                <div class="sample-label">All Functions</div>
+                                <div class="func-list">
+                                    ${m.functions.map(f => `<span class="func-tag">${f.name}: ${f.count}</span>`).join('')}
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            el.innerHTML = html;
+
+            // Add click handlers
+            el.querySelectorAll('.expandable').forEach(row => {
+                row.addEventListener('click', () => {
+                    const idx = row.dataset.idx;
+                    row.classList.toggle('expanded');
+                    el.querySelector(`.expand-content[data-idx="${idx}"]`).classList.toggle('show');
+                });
+            });
+        }
+
+        // Render expandable subagents table
+        function renderSubagentsTable() {
+            const el = document.getElementById('subagents-table');
+            if (!DATA.subagents || DATA.subagents.length === 0) {
+                el.innerHTML = '<tr><td colspan="3" style="color:#8b949e;text-align:center">No subagent data</td></tr>';
+                return;
+            }
+
+            const totalTasks = DATA.subagents.reduce((sum, s) => sum + s.count, 0);
+            let html = '';
+            DATA.subagents.forEach((s, i) => {
+                const pct = totalTasks > 0 ? ((s.count / totalTasks) * 100).toFixed(1) : 0;
+                html += `
+                    <tr class="expandable" data-idx="${i}">
+                        <td><span class="badge badge-${['blue','green','purple'][i%3]}">${s.type}</span></td>
+                        <td>${s.count}</td>
+                        <td>${pct}%</td>
+                    </tr>
+                    <tr class="expand-content" data-idx="${i}">
+                        <td colspan="3">
+                            <div class="expand-inner">
+                                <div class="sample-label">Sample Prompts (${s.samples.length})</div>
+                                ${s.samples.map(sample => `
+                                    <div class="sample-item">
+                                        ${sample.description ? `<div class="sample-text" style="color:#58a6ff;margin-bottom:4px">${sample.description}</div>` : ''}
+                                        <div class="sample-text" style="font-size:11px;color:#8b949e">${sample.prompt || 'No prompt captured'}</div>
+                                    </div>
+                                `).join('')}
+                                ${s.samples.length === 0 ? '<div style="color:#6e7681;font-size:12px">No samples captured</div>' : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            el.innerHTML = html;
+
+            // Add click handlers
+            el.querySelectorAll('.expandable').forEach(row => {
+                row.addEventListener('click', () => {
+                    const idx = row.dataset.idx;
+                    row.classList.toggle('expanded');
+                    el.querySelector(`.expand-content[data-idx="${idx}"]`).classList.toggle('show');
+                });
+            });
+        }
+
+        // Render expensive sessions
+        function renderExpensiveSessions() {
+            const el = document.getElementById('expensive-sessions');
+            const sessions = DATA.expensive_sessions || [];
+
+            if (sessions.length === 0) {
+                el.innerHTML = '<p style="color:#8b949e">No session data available</p>';
+                return;
+            }
+
+            el.innerHTML = sessions.map((s, i) => `
+                <div class="session-card">
+                    <div class="session-header">
+                        <div>
+                            <span class="badge badge-${['blue','green','purple','yellow'][i%4]}">#${i+1}</span>
+                            <span style="margin-left:8px;color:#8b949e">${s.session_id}</span>
+                        </div>
+                        <div class="session-cost">${fmtMoney(s.cost_sonnet)}</div>
+                    </div>
+                    <div class="session-meta">
+                        <div class="session-meta-item"><span>Project:</span> ${s.project}</div>
+                        <div class="session-meta-item"><span>Date:</span> ${s.date}</div>
+                        <div class="session-meta-item"><span>Turns:</span> ${s.turns}</div>
+                        <div class="session-meta-item"><span>Input:</span> ${fmt(s.tokens_in)}</div>
+                        <div class="session-meta-item"><span>Output:</span> ${fmt(s.tokens_out)}</div>
+                        ${s.subagents_used > 0 ? `<div class="session-meta-item"><span>Subagents:</span> ${s.subagents_used}</div>` : ''}
+                    </div>
+                    <div class="session-tools">
+                        ${s.top_tools.map(t => `<span class="func-tag">${t.name}: ${t.count}</span>`).join('')}
+                        ${s.mcp_servers_used.length > 0 ? s.mcp_servers_used.map(m => `<span class="func-tag" style="background:#2d333b">MCP:${m}</span>`).join('') : ''}
+                    </div>
+                </div>
             `).join('');
         }
 
@@ -539,6 +725,20 @@
             document.getElementById('stat-projects2').textContent = s.projects;
             document.getElementById('stat-files').textContent = s.files.toLocaleString();
 
+            // Cost insights
+            const sessions = DATA.expensive_sessions || [];
+            if (sessions.length > 0) {
+                document.getElementById('stat-top-session-cost').textContent = fmtMoney(sessions[0].cost_sonnet);
+                const avgCost = sessions.reduce((sum, s) => sum + s.cost_sonnet, 0) / sessions.length;
+                document.getElementById('stat-avg-session-cost').textContent = fmtMoney(avgCost);
+            }
+            if (DATA.daily && DATA.daily.length > 0) {
+                const topDaily = Math.max(...DATA.daily.map(d => d.cost || 0));
+                const avgDaily = DATA.daily.reduce((sum, d) => sum + (d.cost || 0), 0) / DATA.daily.length;
+                document.getElementById('stat-top-daily-cost').textContent = fmtMoney(topDaily);
+                document.getElementById('stat-avg-daily-cost').textContent = fmtMoney(avgDaily);
+            }
+
             // Health page
             document.getElementById('health-sonnet-cost').textContent = fmtMoney(DATA.costs.sonnet);
             document.getElementById('health-opus-cost').textContent = fmtMoney(DATA.costs.opus) + ' (5x Sonnet)';
@@ -547,7 +747,6 @@
             // Charts
             renderBarChart('daily-chart', DATA.daily, 'output', 'date');
             renderBarChart('subagent-chart', DATA.subagents, 'count', 'type');
-            renderBarChart('mcp-chart', DATA.mcp, 'count', 'server');
 
             // Tables
             renderTable('tools-table', DATA.tools.slice(0, 6), [
@@ -567,29 +766,25 @@
                 {key: 'count', fmt: true}
             ]);
 
-            const subagentsWithPct = DATA.subagents.map(s => ({
-                ...s,
-                pct: totalTasks > 0 ? ((s.count / totalTasks) * 100).toFixed(1) + '%' : '0%'
-            }));
-            renderTable('subagents-table', subagentsWithPct, [
-                {key: 'type', badge: true},
-                {key: 'count'},
-                {key: 'pct'}
-            ]);
-
             renderTable('projects-table', DATA.projects, [
                 {key: 'name'},
                 {key: 'sessions'},
-                {key: 'tokens', fmt: true}
+                {key: 'tokens', fmt: true},
+                {key: 'cost_sonnet', money: true}
             ]);
 
-            // MCP legend
+            // MCP legend (overview)
             document.getElementById('mcp-legend').innerHTML = DATA.mcp.map((m, i) => `
                 <div class="pie-item">
                     <div class="pie-dot" style="background:${COLORS[i % COLORS.length]}"></div>
                     ${m.server}: ${m.count}
                 </div>
             `).join('') || '<span style="color:#8b949e">No MCP servers used</span>';
+
+            // Expandable tables
+            renderMcpTable();
+            renderSubagentsTable();
+            renderExpensiveSessions();
 
             // Health checks
             renderHealthChecks();
