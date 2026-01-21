@@ -122,14 +122,18 @@ def extract_session_data(entries, filepath, projects_path):
         'tokens': {'input': 0, 'output': 0, 'cache_read': 0, 'cache_creation': 0},
         'turns': 0,
         'tool_calls': defaultdict(int),
-        'tool_errors': defaultdict(int),  # Track failed tool calls
+        'tool_errors': defaultdict(int),  # Track failed tool calls by tool name
+        'tool_retries': defaultdict(int),  # Track consecutive same-tool calls
         'mcp_calls': defaultdict(lambda: defaultdict(int)),
         'subagent_calls': [],
         'first_timestamp': None,
         'last_timestamp': None,
-        'hours_active': set(),  # Track which hours session was active
-        'user_messages': 0,  # Count user messages
+        'hours_active': set(),
+        'user_messages': 0,
     }
+
+    # For tracking tool use IDs to match with errors
+    pending_tool_uses = {}  # tool_use_id -> tool_name
 
     # Get project name from path
     try:
@@ -192,14 +196,26 @@ def extract_session_data(entries, filepath, projects_path):
             for item in content:
                 # Track tool errors from results
                 if isinstance(item, dict) and item.get('type') == 'tool_result':
+                    tool_use_id = item.get('tool_use_id', '')
                     if item.get('is_error'):
-                        # Try to find which tool failed
-                        tool_use_id = item.get('tool_use_id', '')
                         session_data['tool_errors']['total'] += 1
+                        # Track which tool failed
+                        if tool_use_id in pending_tool_uses:
+                            failed_tool = pending_tool_uses[tool_use_id]
+                            session_data['tool_errors'][failed_tool] = session_data['tool_errors'].get(failed_tool, 0) + 1
 
                 if isinstance(item, dict) and item.get('type') == 'tool_use':
                     tool_name = item.get('name', 'unknown')
+                    tool_use_id = item.get('id', '')
                     session_data['tool_calls'][tool_name] += 1
+
+                    # Track for error matching
+                    if tool_use_id:
+                        pending_tool_uses[tool_use_id] = tool_name
+
+                    # Track retries (consecutive same-tool calls)
+                    if last_tool == tool_name:
+                        session_data['tool_retries'][tool_name] += 1
 
                     # Track MCP calls with function names
                     if tool_name.startswith('mcp__'):
@@ -232,6 +248,7 @@ def extract_session_data(entries, filepath, projects_path):
     # Convert defaultdicts to regular dicts and sets to lists
     session_data['tool_calls'] = dict(session_data['tool_calls'])
     session_data['tool_errors'] = dict(session_data['tool_errors'])
+    session_data['tool_retries'] = dict(session_data['tool_retries'])
     session_data['mcp_calls'] = {k: dict(v) for k, v in session_data['mcp_calls'].items()}
     session_data['hours_active'] = list(session_data['hours_active'])
 
@@ -282,6 +299,9 @@ def analyze_claude_folder(claude_dir):
     tool_chain_costs = defaultdict(lambda: {'count': 0, 'total_cost': 0})
     total_errors = 0
     sessions_with_errors = 0
+    tool_error_counts = defaultdict(int)  # Which tools fail most
+    tool_retry_counts = defaultdict(int)  # Which tools get retried most
+    all_session_list = []  # For date filtering in UI
 
     for filepath in jsonl_files:
         entries = parse_jsonl_file(filepath)
@@ -360,6 +380,27 @@ def analyze_claude_folder(claude_dir):
         total_errors += errors_in_session
         if errors_in_session > 0:
             sessions_with_errors += 1
+
+        # Aggregate tool-specific errors
+        for tool, count in session_data['tool_errors'].items():
+            if tool != 'total':
+                tool_error_counts[tool] += count
+
+        # Aggregate tool retries
+        for tool, count in session_data['tool_retries'].items():
+            tool_retry_counts[tool] += count
+
+        # Build session list for date filtering
+        all_session_list.append({
+            'session_id': session_data['session_id'][:8] if session_data['session_id'] else 'unknown',
+            'project': session_data['project'],
+            'date': session_data['first_timestamp'][:10] if session_data['first_timestamp'] else 'unknown',
+            'cost_sonnet': session_data['cost_sonnet'],
+            'tokens': session_data['tokens']['input'] + session_data['tokens']['output'],
+            'turns': session_data['turns'],
+            'duration': session_data['duration_mins'],
+            'errors': errors_in_session
+        })
 
         # Aggregate project data (now with full session info)
         proj = session_data['project']
@@ -520,6 +561,99 @@ def analyze_claude_folder(claude_dir):
     else:
         projected_monthly = 0
 
+    # Week-over-week comparison
+    wow_comparison = {}
+    if len(sorted_dates) >= 14:
+        this_week = sorted_dates[-7:]
+        last_week = sorted_dates[-14:-7]
+        this_week_cost = sum(all_daily[d]['cost_sonnet'] for d in this_week)
+        last_week_cost = sum(all_daily[d]['cost_sonnet'] for d in last_week)
+        if last_week_cost > 0:
+            wow_change = ((this_week_cost - last_week_cost) / last_week_cost) * 100
+        else:
+            wow_change = 0
+        wow_comparison = {
+            'this_week': round(this_week_cost, 2),
+            'last_week': round(last_week_cost, 2),
+            'change_pct': round(wow_change, 1),
+            'change_direction': 'up' if wow_change > 0 else 'down' if wow_change < 0 else 'flat'
+        }
+    else:
+        wow_comparison = {'this_week': 0, 'last_week': 0, 'change_pct': 0, 'change_direction': 'flat'}
+
+    # Calculate average session cost for anomaly detection
+    all_costs = [s['cost_sonnet'] for s in all_sessions if s['cost_sonnet'] > 0]
+    avg_session_cost = sum(all_costs) / len(all_costs) if all_costs else 0
+    anomaly_threshold = avg_session_cost * 2  # Sessions costing >2x average
+
+    # Format tool error data
+    tool_errors_list = sorted(tool_error_counts.items(), key=lambda x: -x[1])[:10]
+
+    # Format tool retry data
+    tool_retries_list = sorted(tool_retry_counts.items(), key=lambda x: -x[1])[:10]
+
+    # Generate smart insights
+    smart_insights = []
+
+    # Weekday insight
+    if weekday_list:
+        max_day = max(weekday_list, key=lambda x: x['cost'])
+        min_day = min(weekday_list, key=lambda x: x['cost'])
+        if max_day['cost'] > 0 and min_day['cost'] > 0:
+            ratio = max_day['cost'] / min_day['cost'] if min_day['cost'] > 0 else 1
+            if ratio > 2:
+                smart_insights.append({
+                    'type': 'weekday',
+                    'icon': '📅',
+                    'title': f"{max_day['day']} costs {ratio:.1f}x more than {min_day['day']}",
+                    'desc': 'Consider spreading work across days for more predictable costs.'
+                })
+
+    # Hourly insight
+    if hourly_list:
+        peak_hours = sorted(hourly_list, key=lambda x: -x['cost'])[:3]
+        if peak_hours[0]['cost'] > 0:
+            smart_insights.append({
+                'type': 'hourly',
+                'icon': '⏰',
+                'title': f"Peak usage hours: {', '.join(h['label'] for h in peak_hours[:3])}",
+                'desc': f"These hours account for significant cost."
+            })
+
+    # WoW insight
+    if wow_comparison['change_pct'] > 20:
+        smart_insights.append({
+            'type': 'wow',
+            'icon': '📈',
+            'title': f"Spending up {wow_comparison['change_pct']}% vs last week",
+            'desc': f"This week: ${wow_comparison['this_week']}, Last week: ${wow_comparison['last_week']}"
+        })
+    elif wow_comparison['change_pct'] < -20:
+        smart_insights.append({
+            'type': 'wow',
+            'icon': '📉',
+            'title': f"Spending down {abs(wow_comparison['change_pct'])}% vs last week",
+            'desc': f"This week: ${wow_comparison['this_week']}, Last week: ${wow_comparison['last_week']}"
+        })
+
+    # Retry insight
+    if tool_retries_list and tool_retries_list[0][1] > 10:
+        smart_insights.append({
+            'type': 'retry',
+            'icon': '🔄',
+            'title': f"{tool_retries_list[0][0]} retried {tool_retries_list[0][1]} times",
+            'desc': 'Consecutive same-tool calls may indicate struggling. Review these sessions.'
+        })
+
+    # Error insight
+    if tool_errors_list and tool_errors_list[0][1] > 5:
+        smart_insights.append({
+            'type': 'error',
+            'icon': '⚠️',
+            'title': f"{tool_errors_list[0][0]} failed {tool_errors_list[0][1]} times",
+            'desc': 'This tool has the highest failure rate. Check permissions or usage patterns.'
+        })
+
     # Get most expensive sessions
     expensive_sessions = sorted(all_sessions, key=lambda x: -x['cost_sonnet'])[:20]
     session_insights = []
@@ -543,11 +677,13 @@ def analyze_claude_folder(claude_dir):
             'top_tools': [{'name': t[0], 'count': t[1]} for t in top_tools],
             'subagents_used': len(s['subagent_calls']),
             'mcp_servers_used': list(s['mcp_calls'].keys()),
-            'cost_insight': insight
+            'cost_insight': insight,
+            'is_anomaly': s['cost_sonnet'] > anomaly_threshold
         })
 
     return {
         'generated': datetime.now().strftime('%b %d, %Y'),
+        'generated_ts': datetime.now().isoformat(),
         'summary': {
             'sessions': len(unique_sessions),
             'files': len(jsonl_files),
@@ -560,7 +696,9 @@ def analyze_claude_folder(claude_dir):
             'cache_rate': cache_rate,
             'total_errors': total_errors,
             'sessions_with_errors': sessions_with_errors,
-            'error_rate': round(sessions_with_errors / len(unique_sessions) * 100, 1) if unique_sessions else 0
+            'error_rate': round(sessions_with_errors / len(unique_sessions) * 100, 1) if unique_sessions else 0,
+            'total_retries': sum(tool_retry_counts.values()),
+            'avg_session_cost': round(avg_session_cost, 2)
         },
         'tokens': total_tokens,
         'costs': {
@@ -570,7 +708,10 @@ def analyze_claude_folder(claude_dir):
             'breakdown': cost_breakdown,
             'projected_monthly': projected_monthly
         },
+        'wow': wow_comparison,
         'tools': [{'name': t[0], 'count': t[1]} for t in tools_list],
+        'tool_errors': [{'name': t[0], 'count': t[1]} for t in tool_errors_list],
+        'tool_retries': [{'name': t[0], 'count': t[1]} for t in tool_retries_list],
         'mcp': mcp_list,
         'subagents': subagent_list,
         'sequences': [{'sequence': s[0], 'count': s[1]} for s in seq_list],
@@ -579,7 +720,9 @@ def analyze_claude_folder(claude_dir):
         'weekday': weekday_list,
         'duration_stats': duration_stats,
         'projects': proj_list[:20],
-        'expensive_sessions': session_insights
+        'expensive_sessions': session_insights,
+        'all_sessions': sorted(all_session_list, key=lambda x: x['date'], reverse=True),
+        'smart_insights': smart_insights
     }
 
 
