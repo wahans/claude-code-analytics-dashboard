@@ -116,6 +116,12 @@
         .session-insight { margin-top: 12px; padding: 10px 12px; background: #1c2128; border-radius: 6px; border-left: 3px solid #d29922; display: flex; align-items: flex-start; gap: 8px; }
         .insight-icon { font-size: 14px; flex-shrink: 0; }
         .insight-text { font-size: 12px; color: #c9d1d9; line-height: 1.4; }
+
+        /* Nested tables */
+        .expand-inner table { background: #0d1117; }
+        .expand-inner th { font-size: 10px; padding: 6px 8px; }
+        .expand-inner td { font-size: 11px; padding: 6px 8px; }
+        .expand-inner tr:hover { background: #161b22; }
     </style>
 </head>
 <body>
@@ -127,11 +133,14 @@
             </div>
             <div class="nav-item active" data-page="overview"><span class="nav-icon">📊</span>Overview</div>
             <div class="nav-item" data-page="tokens"><span class="nav-icon">🔢</span>Token & Cost</div>
+            <div class="nav-item" data-page="time"><span class="nav-icon">⏰</span>Time Patterns</div>
             <div class="nav-item" data-page="tools"><span class="nav-icon">🔧</span>Tool Usage</div>
             <div class="nav-item" data-page="mcp"><span class="nav-icon">🔌</span>MCP Servers</div>
             <div class="nav-item" data-page="subagents"><span class="nav-icon">🤖</span>Subagents</div>
-            <div class="nav-item" data-page="sessions"><span class="nav-icon">📁</span>Sessions</div>
+            <div class="nav-item" data-page="projects"><span class="nav-icon">📁</span>Projects</div>
+            <div class="nav-item" data-page="calculator"><span class="nav-icon">🧮</span>Cost Calculator</div>
             <div class="nav-item" data-page="insights"><span class="nav-icon">💡</span>Cost Insights</div>
+            <div class="nav-item" data-page="errors"><span class="nav-icon">⚠️</span>Error Analysis</div>
             <div class="nav-item" data-page="health"><span class="nav-icon">💚</span>Config Health</div>
         </div>
         <div class="main">
@@ -238,6 +247,52 @@
                 </div>
             </div>
 
+            <!-- Time Patterns Page -->
+            <div id="page-time" class="page hidden">
+                <div class="page-header">
+                    <h2>Time Patterns</h2>
+                    <p>When and how long you use Claude Code</p>
+                </div>
+                <div class="grid grid-4">
+                    <div class="card">
+                        <div class="card-label" title="Hour of day with highest token usage">Peak Hour</div>
+                        <div class="card-value blue small" id="stat-peak-hour">--</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label" title="Day of week with highest cost">Busiest Day</div>
+                        <div class="card-value green small" id="stat-busiest-day">--</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label" title="Average session duration in minutes">Avg Duration</div>
+                        <div class="card-value purple small" id="stat-avg-duration">-- min</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label" title="Longest recorded session duration">Max Duration</div>
+                        <div class="card-value yellow small" id="stat-max-duration">-- min</div>
+                    </div>
+                </div>
+                <div class="two-col">
+                    <div class="chart-box">
+                        <div class="chart-title" title="Token usage distributed across hours of the day (24h format)">Usage by Hour</div>
+                        <div class="bar-chart" id="hourly-chart" style="height:180px"></div>
+                    </div>
+                    <div class="chart-box">
+                        <div class="chart-title" title="Cost breakdown by day of the week">Cost by Day of Week</div>
+                        <div class="bar-chart" id="weekday-chart" style="height:180px"></div>
+                    </div>
+                </div>
+                <div class="two-col">
+                    <div class="chart-box">
+                        <div class="chart-title" title="Distribution of session lengths">Session Duration Distribution</div>
+                        <div id="duration-dist"></div>
+                    </div>
+                    <div class="chart-box">
+                        <div class="chart-title" title="Cost trend over time with 7-day rolling context">Daily Cost Trend</div>
+                        <div class="bar-chart" id="cost-trend-chart" style="height:180px"></div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Tools Page -->
             <div id="page-tools" class="page hidden">
                 <div class="page-header">
@@ -337,30 +392,34 @@
                 </div>
             </div>
 
-            <!-- Sessions Page -->
-            <div id="page-sessions" class="page hidden">
+            <!-- Projects Page -->
+            <div id="page-projects" class="page hidden">
                 <div class="page-header">
-                    <h2>Session Analytics</h2>
-                    <p>Breakdown by session and project</p>
+                    <h2>Project Analytics</h2>
+                    <p>Click a project to see session details</p>
                 </div>
-                <div class="grid">
+                <div class="grid grid-4">
                     <div class="card">
                         <div class="card-label" title="Number of distinct Claude Code conversation sessions">Total Sessions</div>
-                        <div class="card-value blue" id="stat-sessions2">--</div>
+                        <div class="card-value blue small" id="stat-sessions2">--</div>
                     </div>
                     <div class="card">
                         <div class="card-label" title="Number of different project directories where Claude Code was used">Unique Projects</div>
-                        <div class="card-value green" id="stat-projects2">--</div>
+                        <div class="card-value green small" id="stat-projects2">--</div>
                     </div>
                     <div class="card">
-                        <div class="card-label" title="Number of conversation log files parsed from ~/.claude/projects">JSONL Files</div>
-                        <div class="card-value purple" id="stat-files">--</div>
+                        <div class="card-label" title="Project with highest total cost">Top Project</div>
+                        <div class="card-value purple small" id="stat-top-project">--</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label" title="Number of conversation log files parsed">JSONL Files</div>
+                        <div class="card-value yellow small" id="stat-files">--</div>
                     </div>
                 </div>
                 <div class="chart-box">
-                    <div class="chart-title" title="Cost and token usage breakdown by project directory">Cost by Project</div>
+                    <div class="chart-title" title="Click a row to see all sessions for that project">Projects (Expandable)</div>
                     <table>
-                        <thead><tr><th>Project</th><th>Sessions</th><th>Tokens</th><th>Cost (Sonnet)</th></tr></thead>
+                        <thead><tr><th>Project</th><th>Sessions</th><th>Tokens</th><th>Errors</th><th>Cost</th></tr></thead>
                         <tbody id="projects-table"></tbody>
                     </table>
                 </div>
@@ -393,6 +452,88 @@
                 <div class="chart-box">
                     <div class="chart-title" title="Sessions ranked by estimated cost - see what tools and patterns drive high costs">Most Expensive Sessions</div>
                     <div id="expensive-sessions"></div>
+                </div>
+            </div>
+
+            <!-- Cost Calculator Page -->
+            <div id="page-calculator" class="page hidden">
+                <div class="page-header">
+                    <h2>Cost Calculator</h2>
+                    <p>What-if analysis and projections</p>
+                </div>
+                <div class="grid grid-4">
+                    <div class="card">
+                        <div class="card-label" title="Cost if all usage was on Sonnet ($3/$15 per MTok)">Sonnet Cost</div>
+                        <div class="card-value blue small" id="calc-sonnet">$--</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label" title="Cost if all usage was on Opus ($15/$75 per MTok)">Opus Cost</div>
+                        <div class="card-value purple small" id="calc-opus">$--</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label" title="Cost if all usage was on Haiku ($0.25/$1.25 per MTok)">Haiku Cost</div>
+                        <div class="card-value green small" id="calc-haiku">$--</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label" title="Projected monthly cost based on last 7 days average">Projected Monthly</div>
+                        <div class="card-value yellow small" id="calc-projected">$--</div>
+                    </div>
+                </div>
+                <div class="two-col">
+                    <div class="chart-box">
+                        <div class="chart-title" title="Where your money goes - breakdown by token type">Cost Breakdown</div>
+                        <div id="cost-breakdown"></div>
+                    </div>
+                    <div class="chart-box">
+                        <div class="chart-title" title="How much you'd save using Haiku for simple tasks">Potential Savings</div>
+                        <div id="savings-analysis"></div>
+                    </div>
+                </div>
+                <div class="chart-box">
+                    <div class="chart-title" title="Compare models side-by-side">Model Comparison</div>
+                    <table>
+                        <thead><tr><th>Model</th><th>Input Price</th><th>Output Price</th><th>Your Cost</th><th>vs Sonnet</th></tr></thead>
+                        <tbody id="model-comparison"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Error Analysis Page -->
+            <div id="page-errors" class="page hidden">
+                <div class="page-header">
+                    <h2>Error Analysis</h2>
+                    <p>Tool failures and retry patterns</p>
+                </div>
+                <div class="grid grid-4">
+                    <div class="card">
+                        <div class="card-label" title="Total number of tool execution errors detected">Total Errors</div>
+                        <div class="card-value yellow small" id="stat-total-errors">--</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label" title="Sessions that had at least one error">Sessions w/ Errors</div>
+                        <div class="card-value purple small" id="stat-error-sessions">--</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label" title="Percentage of sessions with errors">Error Rate</div>
+                        <div class="card-value blue small" id="stat-error-rate">--%</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label" title="Average errors per session with errors">Avg Errors/Session</div>
+                        <div class="card-value green small" id="stat-avg-errors">--</div>
+                    </div>
+                </div>
+                <div class="two-col">
+                    <div class="chart-box">
+                        <div class="chart-title" title="What errors may indicate about your workflow">Error Insights</div>
+                        <div id="error-insights"></div>
+                    </div>
+                    <div class="chart-box">
+                        <div class="chart-title" title="Projects with the most errors">Projects by Errors</div>
+                        <table>
+                            <thead><tr><th>Project</th><th>Errors</th><th>Sessions</th></tr></thead>
+                            <tbody id="errors-by-project"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -635,6 +776,253 @@
             `).join('');
         }
 
+        // Render expandable projects table
+        function renderProjectsTable() {
+            const el = document.getElementById('projects-table');
+            if (!DATA.projects || DATA.projects.length === 0) {
+                el.innerHTML = '<tr><td colspan="5" style="color:#8b949e;text-align:center">No project data</td></tr>';
+                return;
+            }
+
+            let html = '';
+            DATA.projects.forEach((p, i) => {
+                html += `
+                    <tr class="expandable" data-idx="${i}">
+                        <td><span class="badge badge-${['blue','green','purple'][i%3]}">${p.name}</span></td>
+                        <td>${p.session_count}</td>
+                        <td>${fmt(p.tokens)}</td>
+                        <td>${p.total_errors || 0}</td>
+                        <td>${fmtMoney(p.cost_sonnet)}</td>
+                    </tr>
+                    <tr class="expand-content" data-idx="${i}">
+                        <td colspan="5">
+                            <div class="expand-inner">
+                                <div class="sample-label">Sessions (Top 10 by Cost)</div>
+                                <table style="margin-top:8px">
+                                    <thead><tr><th>Session</th><th>Date</th><th>Turns</th><th>Duration</th><th>Errors</th><th>Cost</th></tr></thead>
+                                    <tbody>
+                                        ${(p.sessions || []).map(s => `
+                                            <tr>
+                                                <td style="font-family:monospace;font-size:11px">${s.session_id}</td>
+                                                <td>${s.date}</td>
+                                                <td>${s.turns}</td>
+                                                <td>${s.duration} min</td>
+                                                <td>${s.errors || 0}</td>
+                                                <td>${fmtMoney(s.cost_sonnet)}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            el.innerHTML = html;
+
+            // Add click handlers
+            el.querySelectorAll('.expandable').forEach(row => {
+                row.addEventListener('click', () => {
+                    const idx = row.dataset.idx;
+                    row.classList.toggle('expanded');
+                    el.querySelector(`.expand-content[data-idx="${idx}"]`).classList.toggle('show');
+                });
+            });
+        }
+
+        // Render time patterns
+        function renderTimePatterns() {
+            const hourly = DATA.hourly || [];
+            const weekday = DATA.weekday || [];
+            const duration = DATA.duration_stats || {};
+
+            // Peak hour
+            if (hourly.length > 0) {
+                const peak = hourly.reduce((max, h) => h.tokens > max.tokens ? h : max, hourly[0]);
+                document.getElementById('stat-peak-hour').textContent = peak.label;
+            }
+
+            // Busiest day
+            if (weekday.length > 0) {
+                const busiest = weekday.reduce((max, d) => d.cost > max.cost ? d : max, weekday[0]);
+                document.getElementById('stat-busiest-day').textContent = busiest.day_short;
+            }
+
+            // Duration stats
+            document.getElementById('stat-avg-duration').textContent = (duration.avg || 0) + ' min';
+            document.getElementById('stat-max-duration').textContent = (duration.max || 0) + ' min';
+
+            // Hourly chart
+            renderBarChart('hourly-chart', hourly, 'tokens', 'label');
+
+            // Weekday chart (cost)
+            renderBarChart('weekday-chart', weekday, 'cost', 'day_short');
+
+            // Cost trend (using full daily data)
+            const daily = DATA.daily || [];
+            if (daily.length > 0) {
+                renderBarChart('cost-trend-chart', daily.slice(-30), 'cost', 'date_short');
+            }
+
+            // Duration distribution
+            const dist = duration.distribution || {};
+            const distEl = document.getElementById('duration-dist');
+            const distData = [
+                {label: '< 5 min', count: dist.under_5 || 0},
+                {label: '5-15 min', count: dist['5_to_15'] || 0},
+                {label: '15-30 min', count: dist['15_to_30'] || 0},
+                {label: '30-60 min', count: dist['30_to_60'] || 0},
+                {label: '60+ min', count: dist.over_60 || 0}
+            ];
+            const maxDist = Math.max(...distData.map(d => d.count), 1);
+            distEl.innerHTML = distData.map((d, i) => `
+                <div style="display:flex;align-items:center;margin:8px 0">
+                    <div style="width:80px;font-size:12px;color:#8b949e">${d.label}</div>
+                    <div class="bar-bg" style="flex:1;margin:0 12px">
+                        <div class="bar-fill" style="width:${(d.count/maxDist)*100}%;background:${COLORS[i]}"></div>
+                    </div>
+                    <div style="width:40px;font-size:12px;text-align:right">${d.count}</div>
+                </div>
+            `).join('');
+        }
+
+        // Render cost calculator
+        function renderCostCalculator() {
+            const costs = DATA.costs || {};
+            const breakdown = costs.breakdown || {};
+
+            document.getElementById('calc-sonnet').textContent = fmtMoney(costs.sonnet || 0);
+            document.getElementById('calc-opus').textContent = fmtMoney(costs.opus || 0);
+            document.getElementById('calc-haiku').textContent = fmtMoney(costs.haiku || 0);
+            document.getElementById('calc-projected').textContent = fmtMoney(costs.projected_monthly || 0);
+
+            // Cost breakdown
+            const breakdownEl = document.getElementById('cost-breakdown');
+            const breakdownData = [
+                {label: 'Input Tokens', cost: breakdown.input || 0, color: COLORS[0]},
+                {label: 'Output Tokens', cost: breakdown.output || 0, color: COLORS[1]},
+                {label: 'Cache Read', cost: breakdown.cache_read || 0, color: COLORS[2]},
+                {label: 'Cache Creation', cost: breakdown.cache_creation || 0, color: COLORS[3]}
+            ];
+            const totalBreakdown = breakdownData.reduce((s, d) => s + d.cost, 0) || 1;
+            breakdownEl.innerHTML = breakdownData.map(d => `
+                <div style="display:flex;align-items:center;margin:12px 0">
+                    <div style="width:120px;font-size:13px">${d.label}</div>
+                    <div class="bar-bg" style="flex:1;margin:0 12px">
+                        <div class="bar-fill" style="width:${(d.cost/totalBreakdown)*100}%;background:${d.color}"></div>
+                    </div>
+                    <div style="width:80px;font-size:13px;text-align:right">${fmtMoney(d.cost)} (${((d.cost/totalBreakdown)*100).toFixed(0)}%)</div>
+                </div>
+            `).join('');
+
+            // Savings analysis
+            const savingsEl = document.getElementById('savings-analysis');
+            const haikuSavings = (costs.sonnet || 0) - (costs.haiku || 0);
+            const opusPremium = (costs.opus || 0) - (costs.sonnet || 0);
+            savingsEl.innerHTML = `
+                <div class="health-item">
+                    <div class="health-icon good">↓</div>
+                    <div class="health-text">
+                        <h4>Haiku Savings Potential</h4>
+                        <p>Using Haiku instead of Sonnet: <strong style="color:#3fb950">${fmtMoney(haikuSavings)}</strong> saved</p>
+                    </div>
+                </div>
+                <div class="health-item">
+                    <div class="health-icon warn">↑</div>
+                    <div class="health-text">
+                        <h4>Opus Premium</h4>
+                        <p>Using Opus instead of Sonnet costs <strong style="color:#d29922">${fmtMoney(opusPremium)}</strong> more</p>
+                    </div>
+                </div>
+                <div class="health-item">
+                    <div class="health-icon good">📊</div>
+                    <div class="health-text">
+                        <h4>Monthly Projection</h4>
+                        <p>Based on last 7 days: <strong>${fmtMoney(costs.projected_monthly || 0)}/month</strong></p>
+                    </div>
+                </div>
+            `;
+
+            // Model comparison table
+            const compEl = document.getElementById('model-comparison');
+            const models = [
+                {name: 'Haiku', input: '$0.25', output: '$1.25', cost: costs.haiku || 0},
+                {name: 'Sonnet', input: '$3.00', output: '$15.00', cost: costs.sonnet || 0},
+                {name: 'Opus', input: '$15.00', output: '$75.00', cost: costs.opus || 0}
+            ];
+            compEl.innerHTML = models.map((m, i) => {
+                const diff = m.cost - (costs.sonnet || 0);
+                const diffStr = diff === 0 ? '-' : (diff > 0 ? '+' + fmtMoney(diff) : '-' + fmtMoney(Math.abs(diff)));
+                const diffColor = diff === 0 ? '#8b949e' : (diff > 0 ? '#d29922' : '#3fb950');
+                return `
+                    <tr>
+                        <td><span class="badge badge-${['green','blue','purple'][i]}">${m.name}</span></td>
+                        <td>${m.input}</td>
+                        <td>${m.output}</td>
+                        <td>${fmtMoney(m.cost)}</td>
+                        <td style="color:${diffColor}">${diffStr}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Render error analysis
+        function renderErrorAnalysis() {
+            const s = DATA.summary || {};
+
+            document.getElementById('stat-total-errors').textContent = (s.total_errors || 0).toLocaleString();
+            document.getElementById('stat-error-sessions').textContent = (s.sessions_with_errors || 0).toLocaleString();
+            document.getElementById('stat-error-rate').textContent = (s.error_rate || 0) + '%';
+
+            const avgErrors = s.sessions_with_errors > 0 ? (s.total_errors / s.sessions_with_errors).toFixed(1) : 0;
+            document.getElementById('stat-avg-errors').textContent = avgErrors;
+
+            // Error insights
+            const insightsEl = document.getElementById('error-insights');
+            const insights = [];
+
+            if (s.error_rate > 50) {
+                insights.push({icon: '⚠️', title: 'High error rate', desc: 'Over half of sessions have errors. Review common failure patterns.'});
+            } else if (s.error_rate > 20) {
+                insights.push({icon: '📋', title: 'Moderate error rate', desc: 'Some sessions encounter errors. Consider reviewing tool permissions.'});
+            } else {
+                insights.push({icon: '✓', title: 'Low error rate', desc: 'Most sessions complete without tool errors.'});
+            }
+
+            if (s.total_errors > 100) {
+                insights.push({icon: '🔄', title: 'Many retries', desc: `${s.total_errors} errors may indicate complex tasks or permission issues.`});
+            }
+
+            insightsEl.innerHTML = insights.map(i => `
+                <div class="health-item">
+                    <div class="health-icon ${i.icon === '✓' ? 'good' : 'warn'}">${i.icon}</div>
+                    <div class="health-text">
+                        <h4>${i.title}</h4>
+                        <p>${i.desc}</p>
+                    </div>
+                </div>
+            `).join('') || '<p style="color:#8b949e">No error data available</p>';
+
+            // Projects by errors
+            const errorsTable = document.getElementById('errors-by-project');
+            const projectsWithErrors = (DATA.projects || [])
+                .filter(p => (p.total_errors || 0) > 0)
+                .sort((a, b) => (b.total_errors || 0) - (a.total_errors || 0))
+                .slice(0, 10);
+
+            if (projectsWithErrors.length === 0) {
+                errorsTable.innerHTML = '<tr><td colspan="3" style="color:#8b949e;text-align:center">No errors recorded</td></tr>';
+            } else {
+                errorsTable.innerHTML = projectsWithErrors.map((p, i) => `
+                    <tr>
+                        <td><span class="badge badge-${['yellow','purple','blue'][i%3]}">${p.name}</span></td>
+                        <td>${p.total_errors}</td>
+                        <td>${p.session_count}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
         // Health check renderer
         function renderHealthChecks() {
             const checks = [];
@@ -727,10 +1115,13 @@
                 document.getElementById('stat-top-subagent-count').textContent = DATA.subagents[0].count + ' calls';
             }
 
-            // Session stats
+            // Project stats
             document.getElementById('stat-sessions2').textContent = s.sessions.toLocaleString();
             document.getElementById('stat-projects2').textContent = s.projects;
             document.getElementById('stat-files').textContent = s.files.toLocaleString();
+            if (DATA.projects && DATA.projects.length > 0) {
+                document.getElementById('stat-top-project').textContent = DATA.projects[0].name;
+            }
 
             // Cost insights
             const sessions = DATA.expensive_sessions || [];
@@ -752,7 +1143,7 @@
             document.getElementById('health-cache').textContent = s.cache_rate + '% of input served from cache at 90% discount';
 
             // Charts
-            renderBarChart('daily-chart', DATA.daily, 'output', 'date');
+            renderBarChart('daily-chart', DATA.daily.slice(-14), 'output', 'date_short');
             renderBarChart('subagent-chart', DATA.subagents, 'count', 'type');
 
             // Tables
@@ -773,13 +1164,6 @@
                 {key: 'count', fmt: true}
             ]);
 
-            renderTable('projects-table', DATA.projects, [
-                {key: 'name'},
-                {key: 'sessions'},
-                {key: 'tokens', fmt: true},
-                {key: 'cost_sonnet', money: true}
-            ]);
-
             // MCP legend (overview)
             document.getElementById('mcp-legend').innerHTML = DATA.mcp.map((m, i) => `
                 <div class="pie-item">
@@ -791,7 +1175,13 @@
             // Expandable tables
             renderMcpTable();
             renderSubagentsTable();
+            renderProjectsTable();
             renderExpensiveSessions();
+
+            // New pages
+            renderTimePatterns();
+            renderCostCalculator();
+            renderErrorAnalysis();
 
             // Health checks
             renderHealthChecks();

@@ -16,12 +16,13 @@ import sys
 import argparse
 from pathlib import Path
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Pricing per million tokens
 PRICING = {
     'sonnet': {'input': 3, 'output': 15},
-    'opus': {'input': 15, 'output': 75}
+    'opus': {'input': 15, 'output': 75},
+    'haiku': {'input': 0.25, 'output': 1.25}
 }
 CACHE_READ_DISCOUNT = 0.1   # 90% discount
 CACHE_CREATE_PREMIUM = 1.25  # 25% premium
@@ -121,10 +122,13 @@ def extract_session_data(entries, filepath, projects_path):
         'tokens': {'input': 0, 'output': 0, 'cache_read': 0, 'cache_creation': 0},
         'turns': 0,
         'tool_calls': defaultdict(int),
-        'mcp_calls': defaultdict(lambda: defaultdict(int)),  # server -> function -> count
-        'subagent_calls': [],  # list of {type, description, prompt}
+        'tool_errors': defaultdict(int),  # Track failed tool calls
+        'mcp_calls': defaultdict(lambda: defaultdict(int)),
+        'subagent_calls': [],
         'first_timestamp': None,
         'last_timestamp': None,
+        'hours_active': set(),  # Track which hours session was active
+        'user_messages': 0,  # Count user messages
     }
 
     # Get project name from path
@@ -158,6 +162,12 @@ def extract_session_data(entries, filepath, projects_path):
             if not session_data['first_timestamp']:
                 session_data['first_timestamp'] = ts
             session_data['last_timestamp'] = ts
+            # Track hour of day
+            try:
+                dt = datetime.fromisoformat(ts.replace('Z', '+00:00'))
+                session_data['hours_active'].add(dt.hour)
+            except:
+                pass
 
         msg = entry.get('message', {})
         role = msg.get('role')
@@ -165,6 +175,8 @@ def extract_session_data(entries, filepath, projects_path):
         # Count turns (assistant messages with content)
         if role == 'assistant':
             session_data['turns'] += 1
+        elif role == 'user':
+            session_data['user_messages'] += 1
 
         # Extract token usage
         usage = msg.get('usage', {})
@@ -174,10 +186,17 @@ def extract_session_data(entries, filepath, projects_path):
             session_data['tokens']['cache_read'] += usage.get('cache_read_input_tokens', 0)
             session_data['tokens']['cache_creation'] += usage.get('cache_creation_input_tokens', 0)
 
-        # Extract tool calls
+        # Extract tool calls and results
         content = msg.get('content', [])
         if isinstance(content, list):
             for item in content:
+                # Track tool errors from results
+                if isinstance(item, dict) and item.get('type') == 'tool_result':
+                    if item.get('is_error'):
+                        # Try to find which tool failed
+                        tool_use_id = item.get('tool_use_id', '')
+                        session_data['tool_errors']['total'] += 1
+
                 if isinstance(item, dict) and item.get('type') == 'tool_use':
                     tool_name = item.get('name', 'unknown')
                     session_data['tool_calls'][tool_name] += 1
@@ -210,9 +229,22 @@ def extract_session_data(entries, filepath, projects_path):
                         sequences.append(f"{simple_last} -> {simple_curr}")
                     last_tool = tool_name
 
-    # Convert defaultdicts to regular dicts
+    # Convert defaultdicts to regular dicts and sets to lists
     session_data['tool_calls'] = dict(session_data['tool_calls'])
+    session_data['tool_errors'] = dict(session_data['tool_errors'])
     session_data['mcp_calls'] = {k: dict(v) for k, v in session_data['mcp_calls'].items()}
+    session_data['hours_active'] = list(session_data['hours_active'])
+
+    # Calculate session duration in minutes
+    if session_data['first_timestamp'] and session_data['last_timestamp']:
+        try:
+            start = datetime.fromisoformat(session_data['first_timestamp'].replace('Z', '+00:00'))
+            end = datetime.fromisoformat(session_data['last_timestamp'].replace('Z', '+00:00'))
+            session_data['duration_mins'] = max(1, int((end - start).total_seconds() / 60))
+        except:
+            session_data['duration_mins'] = 0
+    else:
+        session_data['duration_mins'] = 0
 
     return session_data, sequences
 
@@ -237,11 +269,19 @@ def analyze_claude_folder(claude_dir):
     # Aggregates
     total_tokens = {'input': 0, 'output': 0, 'cache_read': 0, 'cache_creation': 0}
     all_tool_counts = defaultdict(int)
-    all_mcp_data = defaultdict(lambda: defaultdict(int))  # server -> function -> count
-    all_subagent_data = defaultdict(list)  # type -> list of {description, prompt}
-    all_daily = defaultdict(lambda: {'input': 0, 'output': 0, 'cost_sonnet': 0})
-    project_data = defaultdict(lambda: {'sessions': 0, 'tokens': 0, 'cost_sonnet': 0})
+    all_mcp_data = defaultdict(lambda: defaultdict(int))
+    all_subagent_data = defaultdict(list)
+    all_daily = defaultdict(lambda: {'input': 0, 'output': 0, 'cost_sonnet': 0, 'sessions': 0})
+    project_data = defaultdict(lambda: {'sessions': [], 'tokens': 0, 'cost_sonnet': 0})
     unique_sessions = set()
+
+    # New aggregates for deeper analytics
+    hourly_usage = defaultdict(lambda: {'tokens': 0, 'sessions': 0, 'cost': 0})
+    weekday_usage = defaultdict(lambda: {'tokens': 0, 'sessions': 0, 'cost': 0})
+    session_durations = []
+    tool_chain_costs = defaultdict(lambda: {'count': 0, 'total_cost': 0})
+    total_errors = 0
+    sessions_with_errors = 0
 
     for filepath in jsonl_files:
         entries = parse_jsonl_file(filepath)
@@ -292,21 +332,61 @@ def analyze_claude_folder(claude_dir):
             all_daily[date]['input'] += session_data['tokens']['input']
             all_daily[date]['output'] += session_data['tokens']['output']
             all_daily[date]['cost_sonnet'] += session_data['cost_sonnet']
+            all_daily[date]['sessions'] += 1
 
-        # Aggregate project data
+            # Hourly and weekday aggregation
+            try:
+                dt = datetime.fromisoformat(session_data['first_timestamp'].replace('Z', '+00:00'))
+                hour = dt.hour
+                weekday = dt.strftime('%A')
+                session_tokens = session_data['tokens']['input'] + session_data['tokens']['output']
+
+                hourly_usage[hour]['tokens'] += session_tokens
+                hourly_usage[hour]['sessions'] += 1
+                hourly_usage[hour]['cost'] += session_data['cost_sonnet']
+
+                weekday_usage[weekday]['tokens'] += session_tokens
+                weekday_usage[weekday]['sessions'] += 1
+                weekday_usage[weekday]['cost'] += session_data['cost_sonnet']
+            except:
+                pass
+
+        # Track session duration
+        if session_data['duration_mins'] > 0:
+            session_durations.append(session_data['duration_mins'])
+
+        # Track errors
+        errors_in_session = session_data['tool_errors'].get('total', 0)
+        total_errors += errors_in_session
+        if errors_in_session > 0:
+            sessions_with_errors += 1
+
+        # Aggregate project data (now with full session info)
         proj = session_data['project']
-        project_data[proj]['sessions'] += 1
+        project_data[proj]['sessions'].append({
+            'session_id': session_data['session_id'][:8] if session_data['session_id'] else 'unknown',
+            'date': session_data['first_timestamp'][:10] if session_data['first_timestamp'] else 'unknown',
+            'cost_sonnet': session_data['cost_sonnet'],
+            'tokens': session_data['tokens']['input'] + session_data['tokens']['output'],
+            'turns': session_data['turns'],
+            'duration': session_data['duration_mins'],
+            'errors': errors_in_session
+        })
         project_data[proj]['tokens'] += session_data['tokens']['input'] + session_data['tokens']['output']
         project_data[proj]['cost_sonnet'] += session_data['cost_sonnet']
-
-    # Process sequences
-    seq_counts = defaultdict(int)
-    for seq in all_sequences:
-        seq_counts[seq] += 1
 
     # Calculate totals
     sonnet_cost = calc_cost(total_tokens, PRICING['sonnet'])
     opus_cost = calc_cost(total_tokens, PRICING['opus'])
+
+    # Process sequences with cost attribution
+    seq_counts = defaultdict(int)
+    for seq in all_sequences:
+        seq_counts[seq] += 1
+
+    # Calculate average cost per sequence (rough approximation)
+    total_seq = len(all_sequences) if all_sequences else 1
+    avg_cost_per_tool = sonnet_cost / total_seq if total_seq > 0 else 0
 
     # Cache efficiency
     total_input = total_tokens['input'] + total_tokens['cache_read']
@@ -349,24 +429,96 @@ def analyze_claude_folder(claude_dir):
     # Format sequence data
     seq_list = sorted(seq_counts.items(), key=lambda x: -x[1])[:15]
 
-    # Format daily data (last 14 days)
-    sorted_dates = sorted(all_daily.keys())[-14:]
+    # Format daily data (all days for trends)
+    sorted_dates = sorted(all_daily.keys())
     daily_list = [{
-        'date': d[-5:],
+        'date': d,
+        'date_short': d[-5:],
         'input': all_daily[d]['input'],
         'output': all_daily[d]['output'],
-        'cost': round(all_daily[d]['cost_sonnet'], 2)
+        'cost': round(all_daily[d]['cost_sonnet'], 2),
+        'sessions': all_daily[d]['sessions']
     } for d in sorted_dates]
 
-    # Format project data
+    # Format hourly data
+    hourly_list = []
+    for hour in range(24):
+        data = hourly_usage[hour]
+        hourly_list.append({
+            'hour': hour,
+            'label': f"{hour:02d}:00",
+            'tokens': data['tokens'],
+            'sessions': data['sessions'],
+            'cost': round(data['cost'], 2)
+        })
+
+    # Format weekday data
+    day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    weekday_list = []
+    for day in day_order:
+        data = weekday_usage[day]
+        weekday_list.append({
+            'day': day,
+            'day_short': day[:3],
+            'tokens': data['tokens'],
+            'sessions': data['sessions'],
+            'cost': round(data['cost'], 2)
+        })
+
+    # Format session duration stats
+    if session_durations:
+        duration_stats = {
+            'avg': round(sum(session_durations) / len(session_durations), 1),
+            'max': max(session_durations),
+            'min': min(session_durations),
+            'median': sorted(session_durations)[len(session_durations) // 2],
+            'distribution': {
+                'under_5': len([d for d in session_durations if d < 5]),
+                '5_to_15': len([d for d in session_durations if 5 <= d < 15]),
+                '15_to_30': len([d for d in session_durations if 15 <= d < 30]),
+                '30_to_60': len([d for d in session_durations if 30 <= d < 60]),
+                'over_60': len([d for d in session_durations if d >= 60])
+            }
+        }
+    else:
+        duration_stats = {'avg': 0, 'max': 0, 'min': 0, 'median': 0, 'distribution': {}}
+
+    # Format project data with full session lists
     proj_list = []
     for name, data in sorted(project_data.items(), key=lambda x: -x[1]['cost_sonnet']):
+        sorted_sessions = sorted(data['sessions'], key=lambda x: -x['cost_sonnet'])
         proj_list.append({
             'name': name,
-            'sessions': data['sessions'],
+            'session_count': len(data['sessions']),
             'tokens': data['tokens'],
-            'cost_sonnet': round(data['cost_sonnet'], 2)
+            'cost_sonnet': round(data['cost_sonnet'], 2),
+            'sessions': sorted_sessions[:10],  # Top 10 sessions per project
+            'total_errors': sum(s['errors'] for s in data['sessions'])
         })
+
+    # Cost breakdown for pie chart
+    input_cost = (total_tokens['input'] / 1_000_000) * PRICING['sonnet']['input']
+    output_cost = (total_tokens['output'] / 1_000_000) * PRICING['sonnet']['output']
+    cache_read_cost = (total_tokens['cache_read'] / 1_000_000) * PRICING['sonnet']['input'] * CACHE_READ_DISCOUNT
+    cache_create_cost = (total_tokens['cache_creation'] / 1_000_000) * PRICING['sonnet']['input'] * CACHE_CREATE_PREMIUM
+    cost_breakdown = {
+        'input': round(input_cost, 2),
+        'output': round(output_cost, 2),
+        'cache_read': round(cache_read_cost, 2),
+        'cache_creation': round(cache_create_cost, 2)
+    }
+
+    # Calculate Haiku what-if cost
+    haiku_cost = calc_cost(total_tokens, PRICING['haiku'])
+
+    # Calculate projected monthly cost (based on recent 7 days)
+    recent_7_days = sorted_dates[-7:] if len(sorted_dates) >= 7 else sorted_dates
+    if recent_7_days:
+        recent_cost = sum(all_daily[d]['cost_sonnet'] for d in recent_7_days)
+        daily_avg = recent_cost / len(recent_7_days)
+        projected_monthly = round(daily_avg * 30, 2)
+    else:
+        projected_monthly = 0
 
     # Get most expensive sessions
     expensive_sessions = sorted(all_sessions, key=lambda x: -x['cost_sonnet'])[:20]
@@ -405,16 +557,28 @@ def analyze_claude_folder(claude_dir):
             'total_mcp_calls': sum(sum(f.values()) for f in all_mcp_data.values()),
             'active_mcp_servers': len(all_mcp_data),
             'total_subagent_calls': sum(len(v) for v in all_subagent_data.values()),
-            'cache_rate': cache_rate
+            'cache_rate': cache_rate,
+            'total_errors': total_errors,
+            'sessions_with_errors': sessions_with_errors,
+            'error_rate': round(sessions_with_errors / len(unique_sessions) * 100, 1) if unique_sessions else 0
         },
         'tokens': total_tokens,
-        'costs': {'sonnet': round(sonnet_cost, 2), 'opus': round(opus_cost, 2)},
+        'costs': {
+            'sonnet': round(sonnet_cost, 2),
+            'opus': round(opus_cost, 2),
+            'haiku': round(haiku_cost, 2),
+            'breakdown': cost_breakdown,
+            'projected_monthly': projected_monthly
+        },
         'tools': [{'name': t[0], 'count': t[1]} for t in tools_list],
         'mcp': mcp_list,
         'subagents': subagent_list,
         'sequences': [{'sequence': s[0], 'count': s[1]} for s in seq_list],
         'daily': daily_list,
-        'projects': proj_list[:15],
+        'hourly': hourly_list,
+        'weekday': weekday_list,
+        'duration_stats': duration_stats,
+        'projects': proj_list[:20],
         'expensive_sessions': session_insights
     }
 
