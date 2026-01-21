@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Code Analytics Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0d1117;
+            color: #e6edf3;
+            min-height: 100vh;
+        }
+        .app { display: flex; min-height: 100vh; }
+        .sidebar {
+            width: 220px;
+            background: #161b22;
+            border-right: 1px solid #30363d;
+            padding: 20px 0;
+            position: fixed;
+            height: 100vh;
+        }
+        .sidebar-header { padding: 0 16px 16px; border-bottom: 1px solid #30363d; margin-bottom: 12px; }
+        .sidebar-header h1 { font-size: 16px; font-weight: 600; }
+        .sidebar-header p { font-size: 11px; color: #8b949e; margin-top: 4px; }
+        .nav-item {
+            display: flex; align-items: center; padding: 10px 16px;
+            color: #8b949e; cursor: pointer; font-size: 13px;
+        }
+        .nav-item:hover { background: #21262d; color: #e6edf3; }
+        .nav-item.active { background: #21262d; color: #e6edf3; border-left: 2px solid #58a6ff; }
+        .nav-icon { width: 24px; margin-right: 10px; }
+        .main { flex: 1; margin-left: 220px; padding: 24px; }
+        .page-header { margin-bottom: 24px; }
+        .page-header h2 { font-size: 22px; font-weight: 600; }
+        .page-header p { color: #8b949e; margin-top: 4px; font-size: 14px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .card-label { font-size: 11px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; cursor: help; }
+        .card-label[title]:hover { color: #c9d1d9; }
+        .chart-title[title] { cursor: help; }
+        .chart-title[title]:hover { color: #c9d1d9; }
+        .card-value { font-size: 28px; font-weight: 600; }
+        .card-value.blue { color: #58a6ff; }
+        .card-value.green { color: #3fb950; }
+        .card-value.yellow { color: #d29922; }
+        .card-value.purple { color: #a371f7; }
+        .card-sub { font-size: 11px; color: #6e7681; margin-top: 4px; }
+        .chart-box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; margin-bottom: 24px; }
+        .chart-title { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        @media (max-width: 1100px) { .two-col { grid-template-columns: 1fr; } }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #30363d; font-size: 13px; }
+        th { font-size: 11px; text-transform: uppercase; color: #8b949e; }
+        tr:hover { background: #21262d; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+        .badge-blue { background: rgba(88,166,255,0.15); color: #58a6ff; }
+        .badge-green { background: rgba(63,185,80,0.15); color: #3fb950; }
+        .badge-purple { background: rgba(163,113,247,0.15); color: #a371f7; }
+        .bar-wrap { display: flex; align-items: center; gap: 8px; }
+        .bar-bg { flex: 1; height: 8px; background: #21262d; border-radius: 4px; }
+        .bar-fill { height: 100%; background: #58a6ff; border-radius: 4px; }
+        .bar-chart { display: flex; align-items: flex-end; gap: 4px; height: 150px; padding: 10px 0; }
+        .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; }
+        .bar-rect { width: 100%; background: #58a6ff; border-radius: 2px 2px 0 0; min-height: 2px; }
+        .bar-label { font-size: 9px; color: #8b949e; margin-top: 4px; text-align: center; }
+        .pie-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+        .pie-item { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+        .pie-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .toggle { display: inline-flex; gap: 4px; background: #21262d; padding: 3px; border-radius: 6px; }
+        .toggle-btn { padding: 6px 12px; border: none; background: transparent; color: #8b949e; cursor: pointer; border-radius: 4px; font-size: 12px; }
+        .toggle-btn.active { background: #58a6ff; color: white; }
+        .health-item { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #30363d; }
+        .health-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 14px; }
+        .health-icon.good { background: rgba(63,185,80,0.15); color: #3fb950; }
+        .health-icon.warn { background: rgba(210,153,34,0.15); color: #d29922; }
+        .health-text h4 { font-size: 13px; font-weight: 500; }
+        .health-text p { font-size: 12px; color: #8b949e; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>Claude Code Analytics</h1>
+                <p id="generated-date">Generated --</p>
+            </div>
+            <div class="nav-item active" data-page="overview"><span class="nav-icon">📊</span>Overview</div>
+            <div class="nav-item" data-page="tokens"><span class="nav-icon">🔢</span>Token & Cost</div>
+            <div class="nav-item" data-page="tools"><span class="nav-icon">🔧</span>Tool Usage</div>
+            <div class="nav-item" data-page="mcp"><span class="nav-icon">🔌</span>MCP Servers</div>
+            <div class="nav-item" data-page="subagents"><span class="nav-icon">🤖</span>Subagents</div>
+            <div class="nav-item" data-page="sessions"><span class="nav-icon">📁</span>Sessions</div>
+            <div class="nav-item" data-page="health"><span class="nav-icon">💚</span>Config Health</div>
+        </div>
+        <div class="main">
+            <!-- Overview Page -->
+            <div id="page-overview" class="page">
+                <div class="page-header">
+                    <h2>Overview</h2>
+                    <p>Summary of your Claude Code usage</p>
+                </div>
+                <div class="grid">
+                    <div class="card">
+                        <div class="card-label" title="Number of distinct Claude Code sessions started across all projects">Total Sessions</div>
+                        <div class="card-value blue" id="stat-sessions">--</div>
+                        <div class="card-sub" id="stat-projects">-- projects</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label" title="Total number of tool invocations (Bash, Read, Edit, etc.) by Claude">Tool Calls</div>
+                        <div class="card-value green" id="stat-tools">--</div>
+                        <div class="card-sub" id="stat-unique-tools">-- unique tools</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label" title="Calls to Model Context Protocol servers for external integrations (Gmail, Airtable, etc.)">MCP Calls</div>
+                        <div class="card-value purple" id="stat-mcp">--</div>
+                        <div class="card-sub" id="stat-mcp-servers">-- servers</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label" title="Approximate API cost based on token usage at selected model pricing">Estimated Cost</div>
+                        <div class="card-value yellow" id="cost-display">$--</div>
+                        <div class="toggle" style="margin-top:8px">
+                            <button class="toggle-btn active" onclick="setCost('sonnet')">Sonnet</button>
+                            <button class="toggle-btn" onclick="setCost('opus')">Opus</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="two-col">
+                    <div class="chart-box">
+                        <div class="chart-title" title="Output tokens generated by Claude per day over the last 14 days">Daily Token Usage</div>
+                        <div class="bar-chart" id="daily-chart"></div>
+                    </div>
+                    <div class="chart-box">
+                        <div class="chart-title" title="Most frequently used tools ranked by invocation count">Top Tools</div>
+                        <table>
+                            <thead><tr><th>Tool</th><th>Count</th><th>Usage</th></tr></thead>
+                            <tbody id="tools-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="two-col">
+                    <div class="chart-box">
+                        <div class="chart-title" title="Distribution of calls across configured Model Context Protocol servers">MCP Servers</div>
+                        <div class="pie-legend" id="mcp-legend"></div>
+                    </div>
+                    <div class="chart-box">
+                        <div class="chart-title" title="Usage of specialized subagents spawned via Task tool for parallel work">Subagents</div>
+                        <div class="bar-chart" id="subagent-chart"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tokens Page -->
+            <div id="page-tokens" class="page hidden">
+                <div class="page-header">
+                    <h2>Token & Cost Analytics</h2>
+                    <p>Detailed breakdown of usage and costs</p>
+                </div>
+                <div class="toggle" style="margin-bottom:20px">
+                    <button class="toggle-btn active" onclick="setModel('sonnet')">Sonnet ($3/$15)</button>
+                    <button class="toggle-btn" onclick="setModel('opus')">Opus ($15/$75)</button>
+                </div>
+                <div class="grid">
+                    <div class="card">
+                        <div class="card-label" title="Tokens sent to Claude in prompts and context window">Input Tokens</div>
+                        <div class="card-value blue" id="stat-input">--</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label" title="Tokens generated by Claude in responses">Output Tokens</div>
+                        <div class="card-value green" id="stat-output">--</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label" title="Tokens served from prompt cache - charged at only 10% of input price">Cache Read</div>
+                        <div class="card-value purple" id="stat-cache-read">--</div>
+                        <div class="card-sub">90% discount</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label" title="Tokens written to prompt cache - charged at 125% of input price">Cache Creation</div>
+                        <div class="card-value yellow" id="stat-cache-create">--</div>
+                        <div class="card-sub">25% premium</div>
+                    </div>
+                </div>
+                <div class="two-col">
+                    <div class="chart-box" style="text-align:center;padding:40px">
+                        <div class="chart-title" title="Total estimated API cost based on all token usage with cache adjustments">Estimated Total Cost</div>
+                        <div style="font-size:48px;font-weight:700;color:#d29922" id="total-cost">$--</div>
+                        <div style="color:#8b949e;margin-top:8px" id="cost-model">Based on Sonnet 4 pricing</div>
+                    </div>
+                    <div class="chart-box" style="text-align:center;padding:40px">
+                        <div class="chart-title" title="Percentage of input tokens served from cache vs fresh context - higher is better for cost">Cache Efficiency</div>
+                        <div style="font-size:48px;font-weight:700;color:#3fb950" id="stat-cache-rate">--%</div>
+                        <div style="color:#8b949e;margin-top:8px">Cache hit rate</div>
+                        <div class="bar-bg" style="max-width:200px;margin:16px auto 0">
+                            <div class="bar-fill" id="cache-bar" style="width:0%;background:#3fb950"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tools Page -->
+            <div id="page-tools" class="page hidden">
+                <div class="page-header">
+                    <h2>Tool Usage Analytics</h2>
+                    <p>Which tools Claude uses most</p>
+                </div>
+                <div class="grid">
+                    <div class="card">
+                        <div class="card-label" title="Sum of all tool invocations across all sessions">Total Tool Calls</div>
+                        <div class="card-value blue" id="stat-total-tools">--</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label" title="Number of distinct tools used (Bash, Read, Edit, Write, etc.)">Unique Tools</div>
+                        <div class="card-value green" id="stat-unique-tools2">--</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label" title="The tool with the highest invocation count">Most Used</div>
+                        <div class="card-value purple" id="stat-top-tool">--</div>
+                        <div class="card-sub" id="stat-top-tool-count">-- calls</div>
+                    </div>
+                </div>
+                <div class="two-col">
+                    <div class="chart-box">
+                        <div class="chart-title" title="All tools ranked by usage count with relative frequency bars">Tool Distribution</div>
+                        <table>
+                            <thead><tr><th>Tool</th><th>Count</th><th style="width:40%">Usage</th></tr></thead>
+                            <tbody id="all-tools-table"></tbody>
+                        </table>
+                    </div>
+                    <div class="chart-box">
+                        <div class="chart-title" title="Frequently occurring pairs of consecutive tool calls - reveals common workflows">Common Tool Sequences</div>
+                        <table>
+                            <thead><tr><th>Sequence</th><th>Count</th></tr></thead>
+                            <tbody id="sequences-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MCP Page -->
+            <div id="page-mcp" class="page hidden">
+                <div class="page-header">
+                    <h2>MCP Server Analytics</h2>
+                    <p>Model Context Protocol server usage</p>
+                </div>
+                <div class="grid">
+                    <div class="card">
+                        <div class="card-label" title="Sum of all MCP server tool invocations">Total MCP Calls</div>
+                        <div class="card-value blue" id="stat-total-mcp">--</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label" title="Number of MCP servers that received at least one call">Active Servers</div>
+                        <div class="card-value green" id="stat-active-servers">--</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label" title="MCP server with the highest call count">Most Used</div>
+                        <div class="card-value purple" id="stat-top-mcp">--</div>
+                        <div class="card-sub" id="stat-top-mcp-count">-- calls</div>
+                    </div>
+                </div>
+                <div class="chart-box">
+                    <div class="chart-title" title="Distribution of calls across all configured MCP servers">MCP Server Usage</div>
+                    <div class="bar-chart" id="mcp-chart"></div>
+                </div>
+            </div>
+
+            <!-- Subagents Page -->
+            <div id="page-subagents" class="page hidden">
+                <div class="page-header">
+                    <h2>Subagent Analytics</h2>
+                    <p>Task tool with specialized subagents</p>
+                </div>
+                <div class="grid">
+                    <div class="card">
+                        <div class="card-label" title="Number of times Task tool was used to spawn a subagent for parallel work">Total Task Calls</div>
+                        <div class="card-value blue" id="stat-total-tasks">--</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label" title="Number of distinct subagent types used (Explore, Plan, Bash, etc.)">Unique Subagents</div>
+                        <div class="card-value green" id="stat-unique-subagents">--</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label" title="Subagent type with the highest usage count">Most Used</div>
+                        <div class="card-value purple" id="stat-top-subagent">--</div>
+                        <div class="card-sub" id="stat-top-subagent-count">-- calls</div>
+                    </div>
+                </div>
+                <div class="chart-box">
+                    <div class="chart-title" title="All subagent types ranked by usage with percentage of total">Subagent Distribution</div>
+                    <table>
+                        <thead><tr><th>Type</th><th>Count</th><th>%</th></tr></thead>
+                        <tbody id="subagents-table"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Sessions Page -->
+            <div id="page-sessions" class="page hidden">
+                <div class="page-header">
+                    <h2>Session Analytics</h2>
+                    <p>Breakdown by session and project</p>
+                </div>
+                <div class="grid">
+                    <div class="card">
+                        <div class="card-label" title="Number of distinct Claude Code conversation sessions">Total Sessions</div>
+                        <div class="card-value blue" id="stat-sessions2">--</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label" title="Number of different project directories where Claude Code was used">Unique Projects</div>
+                        <div class="card-value green" id="stat-projects2">--</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label" title="Number of conversation log files parsed from ~/.claude/projects">JSONL Files</div>
+                        <div class="card-value purple" id="stat-files">--</div>
+                    </div>
+                </div>
+                <div class="chart-box">
+                    <div class="chart-title" title="Total token usage breakdown by project directory">Tokens by Project</div>
+                    <table>
+                        <thead><tr><th>Project</th><th>Sessions</th><th>Tokens</th></tr></thead>
+                        <tbody id="projects-table"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Health Page -->
+            <div id="page-health" class="page hidden">
+                <div class="page-header">
+                    <h2>Configuration Health</h2>
+                    <p>Recommendations to optimize your setup</p>
+                </div>
+                <div class="two-col">
+                    <div class="chart-box">
+                        <div class="chart-title" title="Configuration recommendations based on your usage patterns">Health Checks</div>
+                        <div id="health-checks"></div>
+                    </div>
+                    <div class="chart-box">
+                        <div class="chart-title" title="Side-by-side comparison of estimated costs using different Claude models">Cost Comparison</div>
+                        <div class="health-item">
+                            <div class="health-icon good">$</div>
+                            <div class="health-text">
+                                <h4>Sonnet 4 Estimate</h4>
+                                <p id="health-sonnet-cost">$--</p>
+                            </div>
+                        </div>
+                        <div class="health-item">
+                            <div class="health-icon warn">$</div>
+                            <div class="health-text">
+                                <h4>Opus 4.5 Estimate</h4>
+                                <p id="health-opus-cost">$-- (5x Sonnet)</p>
+                            </div>
+                        </div>
+                        <div class="health-item">
+                            <div class="health-icon good">✓</div>
+                            <div class="health-text">
+                                <h4>Cache Savings</h4>
+                                <p id="health-cache">--% of input served from cache at 90% discount</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Injected analytics data
+        const DATA = __DATA_PLACEHOLDER__;
+
+        const COLORS = ['#58a6ff', '#3fb950', '#a371f7', '#db61a2', '#d29922'];
+        const fmt = n => n >= 1e9 ? (n/1e9).toFixed(1)+'B' : n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e3 ? (n/1e3).toFixed(1)+'K' : n.toString();
+        const fmtMoney = n => '$' + n.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+        // Navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+                document.getElementById('page-' + item.dataset.page).classList.remove('hidden');
+            });
+        });
+
+        // Cost toggles
+        let currentModel = 'sonnet';
+        function setCost(model) {
+            currentModel = model;
+            document.querySelectorAll('#page-overview .toggle-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('cost-display').textContent = fmtMoney(DATA.costs[model]);
+        }
+
+        function setModel(model) {
+            currentModel = model;
+            document.querySelectorAll('#page-tokens .toggle-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('total-cost').textContent = fmtMoney(DATA.costs[model]);
+            document.getElementById('cost-model').textContent = 'Based on ' + (model === 'sonnet' ? 'Sonnet 4' : 'Opus 4.5') + ' pricing';
+        }
+
+        // Render bar chart
+        function renderBarChart(container, data, valueKey, labelKey, maxVal) {
+            const el = document.getElementById(container);
+            if (!data || data.length === 0) {
+                el.innerHTML = '<div style="color:#8b949e;text-align:center;padding:40px">No data</div>';
+                return;
+            }
+            const max = maxVal || Math.max(...data.map(d => d[valueKey]));
+            el.innerHTML = data.map((d, i) => `
+                <div class="bar-col">
+                    <div class="bar-rect" style="height:${Math.max(2, (d[valueKey]/max)*130)}px;background:${COLORS[i % COLORS.length]}"></div>
+                    <div class="bar-label">${d[labelKey]}</div>
+                </div>
+            `).join('');
+        }
+
+        // Render table
+        function renderTable(container, data, cols) {
+            const el = document.getElementById(container);
+            if (!data || data.length === 0) {
+                el.innerHTML = '<tr><td colspan="3" style="color:#8b949e;text-align:center">No data</td></tr>';
+                return;
+            }
+            const badges = ['badge-blue', 'badge-green', 'badge-purple'];
+            const maxVal = Math.max(...data.map(d => d.count || 0));
+            el.innerHTML = data.map((d, i) => `
+                <tr>
+                    ${cols.map((c, ci) => {
+                        if (c.badge) return `<td><span class="badge ${badges[i%3]}">${d[c.key]}</span></td>`;
+                        if (c.bar) return `<td><div class="bar-bg"><div class="bar-fill" style="width:${(d.count/maxVal)*100}%"></div></div></td>`;
+                        if (c.fmt) return `<td>${fmt(d[c.key])}</td>`;
+                        return `<td>${d[c.key]}</td>`;
+                    }).join('')}
+                </tr>
+            `).join('');
+        }
+
+        // Health check renderer
+        function renderHealthChecks() {
+            const checks = [];
+            const s = DATA.summary;
+
+            if (s.cache_rate >= 70) {
+                checks.push({good: true, title: 'Excellent cache efficiency', desc: `${s.cache_rate}% cache hit rate saves significant costs`});
+            } else if (s.cache_rate >= 40) {
+                checks.push({good: true, title: 'Good cache efficiency', desc: `${s.cache_rate}% cache hit rate`});
+            } else {
+                checks.push({good: false, title: 'Low cache efficiency', desc: `${s.cache_rate}% - consider longer conversations for better caching`});
+            }
+
+            if (s.active_mcp_servers > 0) {
+                checks.push({good: true, title: 'MCP servers active', desc: `${s.active_mcp_servers} MCP server(s) in use`});
+            }
+
+            if (DATA.subagents && DATA.subagents.length > 0) {
+                const exploreUsed = DATA.subagents.some(s => s.type === 'Explore');
+                if (exploreUsed) {
+                    checks.push({good: true, title: 'Effective subagent usage', desc: 'Explore agent used for codebase exploration'});
+                }
+            }
+
+            if (s.unique_tools >= 10) {
+                checks.push({good: true, title: 'Diverse tool usage', desc: `Using ${s.unique_tools} different tools`});
+            }
+
+            const html = checks.map(c => `
+                <div class="health-item">
+                    <div class="health-icon ${c.good ? 'good' : 'warn'}">${c.good ? '✓' : '!'}</div>
+                    <div class="health-text">
+                        <h4>${c.title}</h4>
+                        <p>${c.desc}</p>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('health-checks').innerHTML = html || '<p style="color:#8b949e">No health data available</p>';
+        }
+
+        // Initialize dashboard
+        function init() {
+            const s = DATA.summary;
+            const t = DATA.tokens;
+
+            // Header
+            document.getElementById('generated-date').textContent = 'Generated ' + DATA.generated;
+
+            // Overview stats
+            document.getElementById('stat-sessions').textContent = s.sessions.toLocaleString();
+            document.getElementById('stat-projects').textContent = s.projects + ' projects';
+            document.getElementById('stat-tools').textContent = fmt(s.total_tool_calls);
+            document.getElementById('stat-unique-tools').textContent = s.unique_tools + ' unique tools';
+            document.getElementById('stat-mcp').textContent = s.total_mcp_calls.toLocaleString();
+            document.getElementById('stat-mcp-servers').textContent = s.active_mcp_servers + ' servers';
+            document.getElementById('cost-display').textContent = fmtMoney(DATA.costs.sonnet);
+
+            // Token stats
+            document.getElementById('stat-input').textContent = fmt(t.input);
+            document.getElementById('stat-output').textContent = fmt(t.output);
+            document.getElementById('stat-cache-read').textContent = fmt(t.cache_read);
+            document.getElementById('stat-cache-create').textContent = fmt(t.cache_creation);
+            document.getElementById('stat-cache-rate').textContent = s.cache_rate + '%';
+            document.getElementById('cache-bar').style.width = s.cache_rate + '%';
+            document.getElementById('total-cost').textContent = fmtMoney(DATA.costs.sonnet);
+
+            // Tools stats
+            document.getElementById('stat-total-tools').textContent = s.total_tool_calls.toLocaleString();
+            document.getElementById('stat-unique-tools2').textContent = s.unique_tools;
+            if (DATA.tools.length > 0) {
+                document.getElementById('stat-top-tool').textContent = DATA.tools[0].name;
+                document.getElementById('stat-top-tool-count').textContent = DATA.tools[0].count.toLocaleString() + ' calls';
+            }
+
+            // MCP stats
+            document.getElementById('stat-total-mcp').textContent = s.total_mcp_calls.toLocaleString();
+            document.getElementById('stat-active-servers').textContent = s.active_mcp_servers;
+            if (DATA.mcp.length > 0) {
+                document.getElementById('stat-top-mcp').textContent = DATA.mcp[0].server;
+                document.getElementById('stat-top-mcp-count').textContent = DATA.mcp[0].count.toLocaleString() + ' calls';
+            }
+
+            // Subagent stats
+            const totalTasks = DATA.subagents.reduce((sum, s) => sum + s.count, 0);
+            document.getElementById('stat-total-tasks').textContent = totalTasks;
+            document.getElementById('stat-unique-subagents').textContent = DATA.subagents.length;
+            if (DATA.subagents.length > 0) {
+                document.getElementById('stat-top-subagent').textContent = DATA.subagents[0].type;
+                document.getElementById('stat-top-subagent-count').textContent = DATA.subagents[0].count + ' calls';
+            }
+
+            // Session stats
+            document.getElementById('stat-sessions2').textContent = s.sessions.toLocaleString();
+            document.getElementById('stat-projects2').textContent = s.projects;
+            document.getElementById('stat-files').textContent = s.files.toLocaleString();
+
+            // Health page
+            document.getElementById('health-sonnet-cost').textContent = fmtMoney(DATA.costs.sonnet);
+            document.getElementById('health-opus-cost').textContent = fmtMoney(DATA.costs.opus) + ' (5x Sonnet)';
+            document.getElementById('health-cache').textContent = s.cache_rate + '% of input served from cache at 90% discount';
+
+            // Charts
+            renderBarChart('daily-chart', DATA.daily, 'output', 'date');
+            renderBarChart('subagent-chart', DATA.subagents, 'count', 'type');
+            renderBarChart('mcp-chart', DATA.mcp, 'count', 'server');
+
+            // Tables
+            renderTable('tools-table', DATA.tools.slice(0, 6), [
+                {key: 'name', badge: true},
+                {key: 'count', fmt: true},
+                {bar: true}
+            ]);
+
+            renderTable('all-tools-table', DATA.tools, [
+                {key: 'name', badge: true},
+                {key: 'count', fmt: true},
+                {bar: true}
+            ]);
+
+            renderTable('sequences-table', DATA.sequences, [
+                {key: 'sequence'},
+                {key: 'count', fmt: true}
+            ]);
+
+            const subagentsWithPct = DATA.subagents.map(s => ({
+                ...s,
+                pct: totalTasks > 0 ? ((s.count / totalTasks) * 100).toFixed(1) + '%' : '0%'
+            }));
+            renderTable('subagents-table', subagentsWithPct, [
+                {key: 'type', badge: true},
+                {key: 'count'},
+                {key: 'pct'}
+            ]);
+
+            renderTable('projects-table', DATA.projects, [
+                {key: 'name'},
+                {key: 'sessions'},
+                {key: 'tokens', fmt: true}
+            ]);
+
+            // MCP legend
+            document.getElementById('mcp-legend').innerHTML = DATA.mcp.map((m, i) => `
+                <div class="pie-item">
+                    <div class="pie-dot" style="background:${COLORS[i % COLORS.length]}"></div>
+                    ${m.server}: ${m.count}
+                </div>
+            `).join('') || '<span style="color:#8b949e">No MCP servers used</span>';
+
+            // Health checks
+            renderHealthChecks();
+        }
+
+        init();
+    </script>
+</body>
+</html>

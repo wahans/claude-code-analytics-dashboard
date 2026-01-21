@@ -1,0 +1,17 @@
+# Generated dashboard (contains personal usage data)
+my-dashboard.html
+*.generated.html
+
+# Python
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# Old files from development
+analytics_data.json
+dashboard-simple.html
+dashboard.html
+test.html
+extract_data.py
